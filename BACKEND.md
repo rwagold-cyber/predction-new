@@ -1,110 +1,110 @@
-# Backend Services Documentation
+# 后端服务文档
 
-This document describes the backend architecture, services, API reference, and deployment for the PredictX prediction market platform.
+本文档描述了 PredictX 预测市场平台的后端架构、服务、API 参考和部署。
 
-## Architecture Overview
+## 架构总览
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Backend Services                        │
+│                      后端服务                                │
 │  ┌──────────────┐         ┌──────────────────────────────┐  │
-│  │  API Server  │────────▶│      Matching Engine         │  │
-│  │  (Express)   │         │    (In-Memory Orderbook)     │  │
+│  │  API 服务器  │────────▶│      撮合引擎                │  │
+│  │  (Express)   │         │    (内存订单簿)              │  │
 │  └──────┬───────┘         └──────────────┬───────────────┘  │
 │         │                                 │                  │
-│         │                    Fills        │                  │
+│         │                    成交记录      │                  │
 │         ▼                                 ▼                  │
 │  ┌──────────────┐         ┌──────────────────────────────┐  │
-│  │   Market     │         │         Relayer              │  │
-│  │   Manager    │         │   (Batch Submission)         │  │
+│  │   市场       │         │         中继器               │  │
+│  │   管理器     │         │   (批量提交)                 │  │
 │  └──────────────┘         └──────────────┬───────────────┘  │
 └────────────────────────────────────────────┼──────────────────┘
                                              │
                                              │ batchFill()
                                              ▼
-                                     Smart Contracts
+                                     智能合约
 ```
 
-The backend consists of four main services:
+后端由四个主要服务组成:
 
-1. **API Server**: REST API for order submission and queries
-2. **Matching Engine**: Off-chain orderbook and matching logic
-3. **Relayer**: Batch submission of matched orders to blockchain
-4. **Market Manager**: Auto-discovery and resolution of markets
+1. **API 服务器**: 用于订单提交和查询的 REST API
+2. **撮合引擎**: 链下订单簿和撮合逻辑
+3. **中继器**: 将匹配的订单批量提交到区块链
+4. **市场管理器**: 自动发现和解析市场
 
 ---
 
-## Service Locations
+## 服务位置
 
 ```
 services/
-├── api/              # REST API server
+├── api/              # REST API 服务器
 │   └── src/
 │       └── server.ts
-├── matcher/          # Matching engine
+├── matcher/          # 撮合引擎
 │   └── src/
 │       ├── matcher.ts
 │       ├── orderbook.ts
 │       ├── signature.ts
 │       └── types.ts
-├── relayer/          # On-chain submission
+├── relayer/          # 链上提交
 │   └── src/
 │       └── relayer.ts
-├── manager/          # Market discovery & resolution
+├── manager/          # 市场发现和解析
 │   └── src/
 │       └── manager.ts
-└── runner.ts         # Unified service launcher
+└── runner.ts         # 统一服务启动器
 ```
 
 ---
 
-## Configuration
+## 配置
 
-### Environment Variables
+### 环境变量
 
-**File**: `services/.env`
+**文件**: `services/.env`
 
 ```bash
-# Blockchain Connection
+# 区块链连接
 RPC_URL=https://rpc-testnet.socrateschain.org
 CHAIN_ID=1111111
 
-# Private Keys
-RELAYER_PRIVATE_KEY=0x...         # Required: Submit fill transactions
-MARKET_MANAGER_PRIVATE_KEY=0x...  # Recommended: Resolve markets
+# 私钥
+RELAYER_PRIVATE_KEY=0x...         # 必需: 提交成交交易
+MARKET_MANAGER_PRIVATE_KEY=0x...  # 推荐: 解析市场
 
-# Contract Addresses
+# 合约地址
 USDC_ADDRESS=0x0CE332cbf8AA68675C541BBBCe9D6E4a3a4778Ce
 CTF_ADDRESS=0xBaA6292b5BDf0F7D73e2c2b66eF68C8764417665
 SETTLEMENT_ADDRESS=0xc73967F29E6dB5b7b61a616d030a9180e8617464
 MARKET_REGISTRY_ADDRESS=0xE108166156626bD94e5686847F7a29E044D2b73c
 ORACLE_ADAPTER_ADDRESS=0xad3F4094cfA60d2503057e26EbeAf241AC7434E8
 
-# Relayer Configuration
-BATCH_SIZE=10             # Max fills per batch
-BATCH_DELAY_MS=2000       # Max wait time (ms)
-MAX_GAS_PRICE=100         # Max gas price (gwei)
-MAX_RETRIES=3             # Retry attempts
+# 中继器配置
+BATCH_SIZE=10             # 每批次最大成交数
+BATCH_DELAY_MS=2000       # 最大等待时间 (毫秒)
+MAX_GAS_PRICE=100         # 最大 gas 价格 (gwei)
+MAX_RETRIES=3             # 重试次数
 
-# API Configuration
-API_PORT=8080             # API server port
-CORS_ORIGIN=*             # CORS allowed origin
+# API 配置
+API_PORT=8080             # API 服务器端口
+CORS_ORIGIN=*             # CORS 允许的来源
 ```
 
-### Account Requirements
+### 账户要求
 
-- **Relayer Account**: ≥ 0.1 ETH (for gas fees)
-- **Market Manager Account**: ≥ 0.05 ETH (for gas fees)
+- **中继器账户**: ≥ 0.1 ETH (用于 gas 费用)
+- **市场管理器账户**: ≥ 0.05 ETH (用于 gas 费用)
 
 ---
 
-## API Server
+## API 服务器
 
-**Location**: `services/api/src/server.ts`
+**位置**: `services/api/src/server.ts`
 
-Express-based REST API that provides order submission, market queries, and system stats.
+基于 Express 的 REST API,提供订单提交、市场查询和系统统计功能。
 
-### Startup
+### 启动
 
 ```bash
 cd services
@@ -112,13 +112,13 @@ pnpm install
 pnpm start
 ```
 
-The API server will start on `http://localhost:8080` (configurable via `API_PORT`).
+API 服务器将在 `http://localhost:8080` 启动(可通过 `API_PORT` 配置)。
 
 ---
 
-## REST API Reference
+## REST API 参考
 
-### Base URL
+### 基础 URL
 
 ```
 http://localhost:8080
@@ -126,13 +126,13 @@ http://localhost:8080
 
 ---
 
-### Health Check
+### 健康检查
 
-**Endpoint**: `GET /health`
+**端点**: `GET /health`
 
-**Description**: Check service health status
+**描述**: 检查服务健康状态
 
-**Response**:
+**响应**:
 ```json
 {
   "status": "ok",
@@ -142,15 +142,15 @@ http://localhost:8080
 
 ---
 
-### Market Endpoints
+### 市场端点
 
-#### Get All Markets
+#### 获取所有市场
 
-**Endpoint**: `GET /api/v1/markets`
+**端点**: `GET /api/v1/markets`
 
-**Description**: Retrieve all markets
+**描述**: 检索所有市场
 
-**Response**:
+**响应**:
 ```json
 {
   "success": true,
@@ -173,26 +173,26 @@ http://localhost:8080
 
 ---
 
-#### Get Unresolved Markets
+#### 获取未解析市场
 
-**Endpoint**: `GET /api/v1/markets/unresolved`
+**端点**: `GET /api/v1/markets/unresolved`
 
-**Description**: Retrieve only unresolved markets
+**描述**: 仅检索未解析的市场
 
-**Response**: Same format as `/api/v1/markets`
+**响应**: 与 `/api/v1/markets` 格式相同
 
 ---
 
-#### Get Market by ID
+#### 根据 ID 获取市场
 
-**Endpoint**: `GET /api/v1/markets/:marketId`
+**端点**: `GET /api/v1/markets/:marketId`
 
-**Description**: Retrieve specific market details
+**描述**: 检索特定市场详情
 
-**Parameters**:
-- `marketId` (path): Market ID
+**参数**:
+- `marketId` (路径参数): 市场 ID
 
-**Response**:
+**响应**:
 ```json
 {
   "success": true,
@@ -215,13 +215,13 @@ http://localhost:8080
 
 ---
 
-#### Get Market Stats
+#### 获取市场统计
 
-**Endpoint**: `GET /api/v1/markets/stats/summary`
+**端点**: `GET /api/v1/markets/stats/summary`
 
-**Description**: Retrieve market statistics
+**描述**: 检索市场统计信息
 
-**Response**:
+**响应**:
 ```json
 {
   "success": true,
@@ -235,15 +235,15 @@ http://localhost:8080
 
 ---
 
-### Order Endpoints
+### 订单端点
 
-#### Submit Order
+#### 提交订单
 
-**Endpoint**: `POST /api/v1/orders`
+**端点**: `POST /api/v1/orders`
 
-**Description**: Submit a signed order
+**描述**: 提交已签名的订单
 
-**Request Body**:
+**请求体**:
 ```json
 {
   "order": {
@@ -269,7 +269,7 @@ http://localhost:8080
 }
 ```
 
-**Response** (Success):
+**响应** (成功):
 ```json
 {
   "success": true,
@@ -277,7 +277,7 @@ http://localhost:8080
 }
 ```
 
-**Response** (Error):
+**响应** (错误):
 ```json
 {
   "success": false,
@@ -285,23 +285,23 @@ http://localhost:8080
 }
 ```
 
-**Status Codes**:
-- `201`: Order created successfully
-- `400`: Invalid request (missing fields, invalid signature, expired order)
-- `503`: Service unavailable (matching engine not running)
+**状态码**:
+- `201`: 订单创建成功
+- `400`: 请求无效 (缺少字段、签名无效、订单已过期)
+- `503`: 服务不可用 (撮合引擎未运行)
 
 ---
 
-#### Get Order Status
+#### 获取订单状态
 
-**Endpoint**: `GET /api/v1/orders/:orderId`
+**端点**: `GET /api/v1/orders/:orderId`
 
-**Description**: Query order status by order ID
+**描述**: 根据订单 ID 查询订单状态
 
-**Parameters**:
-- `orderId` (path): Order hash
+**参数**:
+- `orderId` (路径参数): 订单哈希
 
-**Response**:
+**响应**:
 ```json
 {
   "success": true,
@@ -314,31 +314,31 @@ http://localhost:8080
 }
 ```
 
-**Order Status Values**:
-- `active`: Order in orderbook, partially/unfilled
-- `filled`: Order completely filled
-- `cancelled`: Order cancelled by user
-- `not_found`: Order not found
+**订单状态值**:
+- `active`: 订单在订单簿中,部分/未成交
+- `filled`: 订单完全成交
+- `cancelled`: 订单被用户取消
+- `not_found`: 订单未找到
 
 ---
 
-#### Cancel Order
+#### 取消订单
 
-**Endpoint**: `DELETE /api/v1/orders/:orderId`
+**端点**: `DELETE /api/v1/orders/:orderId`
 
-**Description**: Cancel an active order
+**描述**: 取消活跃订单
 
-**Parameters**:
-- `orderId` (path): Order hash
-- `marketId` (query): Market ID
-- `outcome` (query): Outcome (0 or 1)
+**参数**:
+- `orderId` (路径参数): 订单哈希
+- `marketId` (查询参数): 市场 ID
+- `outcome` (查询参数): 结果 (0 或 1)
 
-**Example**:
+**示例**:
 ```
 DELETE /api/v1/orders/0x1234...?marketId=12&outcome=1
 ```
 
-**Response** (Success):
+**响应** (成功):
 ```json
 {
   "success": true,
@@ -346,7 +346,7 @@ DELETE /api/v1/orders/0x1234...?marketId=12&outcome=1
 }
 ```
 
-**Response** (Error):
+**响应** (错误):
 ```json
 {
   "success": false,
@@ -354,26 +354,26 @@ DELETE /api/v1/orders/0x1234...?marketId=12&outcome=1
 }
 ```
 
-**Status Codes**:
-- `200`: Order cancelled successfully
-- `404`: Order not found
-- `400`: Missing required query parameters
+**状态码**:
+- `200`: 订单取消成功
+- `404`: 订单未找到
+- `400`: 缺少必需的查询参数
 
 ---
 
-### Orderbook Endpoints
+### 订单簿端点
 
-#### Get Orderbook
+#### 获取订单簿
 
-**Endpoint**: `GET /api/v1/orderbook/:marketId/:outcome`
+**端点**: `GET /api/v1/orderbook/:marketId/:outcome`
 
-**Description**: Get current orderbook snapshot
+**描述**: 获取当前订单簿快照
 
-**Parameters**:
-- `marketId` (path): Market ID
-- `outcome` (path): Outcome (0 or 1)
+**参数**:
+- `marketId` (路径参数): 市场 ID
+- `outcome` (路径参数): 结果 (0 或 1)
 
-**Response**:
+**响应**:
 ```json
 {
   "marketId": "12",
@@ -405,22 +405,22 @@ DELETE /api/v1/orders/0x1234...?marketId=12&outcome=1
 }
 ```
 
-**Notes**:
-- `price`: Price in BPS (e.g., "5000" = 50%)
-- `amount`: Total amount at this price level (6 decimals)
-- `orderCount`: Number of orders at this price level
+**注意**:
+- `price`: 以 BPS 为单位的价格 (例如,"5000" = 50%)
+- `amount`: 该价格水平的总金额 (6 位小数)
+- `orderCount`: 该价格水平的订单数量
 
 ---
 
-### Stats Endpoint
+### 统计端点
 
-#### Get System Stats
+#### 获取系统统计
 
-**Endpoint**: `GET /api/v1/stats`
+**端点**: `GET /api/v1/stats`
 
-**Description**: Get matching engine statistics
+**描述**: 获取撮合引擎统计信息
 
-**Response**:
+**响应**:
 ```json
 {
   "success": true,
@@ -438,89 +438,89 @@ DELETE /api/v1/orders/0x1234...?marketId=12&outcome=1
 
 ---
 
-## Matching Engine
+## 撮合引擎
 
-**Location**: `services/matcher/src/matcher.ts`
+**位置**: `services/matcher/src/matcher.ts`
 
-The Matching Engine maintains in-memory orderbooks and executes price-time priority matching.
+撮合引擎维护内存中的订单簿并执行价格-时间优先撮合。
 
-### Architecture
+### 架构
 
 ```typescript
-MatchingEngine
+ MatchingEngine
 ├── orderBooks: Map<string, OrderBook>  // marketId-outcome → OrderBook
-├── filledAmounts: Map<string, bigint>  // orderId → filled amount
-└── Methods:
-    ├── addOrder()         // Add validated order to orderbook
-    ├── cancelOrder()      // Remove order from orderbook
-    ├── matchMarket()      // Match orders for specific market
-    ├── matchAll()         // Match all markets
-    └── matchesToFills()   // Convert matches to fill structures
+├── filledAmounts: Map<string, bigint>  // orderId → 已成交金额
+└── 方法:
+    ├── addOrder()         // 将已验证的订单添加到订单簿
+    ├── cancelOrder()      // 从订单簿中移除订单
+    ├── matchMarket()      // 撮合特定市场的订单
+    ├── matchAll()         // 撮合所有市场
+    └── matchesToFills()   // 将撮合结果转换为成交结构
 ```
 
-### Orderbook Implementation
+### 订单簿实现
 
-**Location**: `services/matcher/src/orderbook.ts`
+**位置**: `services/matcher/src/orderbook.ts`
 
-**Key Features**:
-- Price-time priority matching
-- Partial fill support
-- Efficient price level aggregation
-- O(log n) order insertion/removal
+**关键特性**:
+- 价格-时间优先撮合
+- 支持部分成交
+- 高效的价格水平聚合
+- O(log n) 订单插入/删除
 
-**Matching Algorithm**:
+**撮合算法**:
 ```typescript
-// For each market + outcome:
-1. Sort buy orders by price DESC, then timestamp ASC
-2. Sort sell orders by price ASC, then timestamp ASC
-3. While (best bid price >= best ask price):
-   a. Match orders
-   b. Generate fill
-   c. Update remaining amounts
-   d. Remove fully filled orders
+// 对于每个市场 + 结果:
+1. 按价格降序、时间戳升序排序买单
+2. 按价格升序、时间戳升序排序卖单
+3. 当 (最佳买价 >= 最佳卖价) 时:
+   a. 撮合订单
+   b. 生成成交记录
+   c. 更新剩余金额
+   d. 移除完全成交的订单
 ```
 
-### Order Validation
+### 订单验证
 
-Orders are validated before being added to the orderbook:
+订单在添加到订单簿之前会进行验证:
 
 ```typescript
-// Basic validation
+// 基本验证
 - amount > 0
 - expiry > now
 - outcome ∈ {0, 1}
 
-// Signature validation
-- Verify EIP-712 signature
-- Check signer === order.maker
+// 签名验证
+- 验证 EIP-712 签名
+- 检查签名者 === order.maker
 
-// Duplicate check
-- Calculate order hash
-- Check if already fully filled
+// 重复检查
+- 计算订单哈希
+- 检查是否已完全成交
 ```
 
-### Matching Frequency
+### 撮合频率
 
-The matching engine runs every **1 second** (configurable):
+撮合引擎每 **1 秒** 运行一次(可配置):
 
 ```typescript
 setInterval(async () => {
   const matches = engine.matchAll();
-  // Send matches to Relayer
+  // 将撮合结果发送到中继器
 }, 1000);
 ```
 
-### Single-Fill System
+### 单向成交系统
 
-**Critical**: The system uses a single-sided fill approach to prevent duplicate minting:
+**关键**: 系统使用单向成交方式来防止重复铸造:
 
 ```typescript
 matchesToFills(matches: Match[]): Fill[] {
   const fills: Fill[] = [];
 
   for (const match of matches) {
-    // Only create ONE fill per match
-    // sellOrder is maker, buyOrder.maker is taker
+    // 每次撮合只创建一个成交记录
+    // sellOrder 是 maker, buyOrder.maker 是 taker
     fills.push({
       order: match.sellOrder.order,
       signature: match.sellOrder.signature,
@@ -533,69 +533,69 @@ matchesToFills(matches: Match[]): Fill[] {
 }
 ```
 
-**Why Single-Fill?**
-- Prevents double-minting of tokens
-- Seller locks collateral, mints complete set
-- Seller transfers outcome token to buyer
-- Seller keeps opposite outcome token
+**为什么使用单向成交?**
+- 防止代币的双重铸造
+- 卖方锁定抵押品,铸造完整代币组
+- 卖方将结果代币转移给买方
+- 卖方保留相反的结果代币
 
 ---
 
-## Relayer
+## 中继器
 
-**Location**: `services/relayer/src/relayer.ts`
+**位置**: `services/relayer/src/relayer.ts`
 
-The Relayer batches matched orders and submits them to the blockchain via `SettlementV2.batchFill()`.
+中继器将匹配的订单批量处理并通过 `SettlementV2.batchFill()` 提交到区块链。
 
-### Features
+### 功能特性
 
-1. **Batch Processing**: Groups multiple fills into single transaction
-2. **Gas Monitoring**: Checks gas price before submission
-3. **Retry Logic**: Automatic retry on temporary failures
-4. **Failure Detection**: Identifies permanent vs. temporary failures
-5. **Statistics Tracking**: Monitors submission success rate
+1. **批量处理**: 将多个成交记录组合到单个交易中
+2. **Gas 监控**: 提交前检查 gas 价格
+3. **重试逻辑**: 临时失败时自动重试
+4. **失败检测**: 识别永久性失败与临时性失败
+5. **统计跟踪**: 监控提交成功率
 
-### Configuration
+### 配置
 
 ```typescript
 const config = {
-  batchSize: 10,           // Max fills per batch
-  batchDelayMs: 2000,      // Max wait time (2 seconds)
-  maxGasPrice: 100,        // Max gas price (gwei)
-  maxRetries: 3,           // Retry attempts
+  batchSize: 10,           // 每批次最大成交数
+  batchDelayMs: 2000,      // 最大等待时间 (2 秒)
+  maxGasPrice: 100,        // 最大 gas 价格 (gwei)
+  maxRetries: 3,           // 重试次数
 };
 ```
 
-### Submission Flow
+### 提交流程
 
 ```typescript
-1. Receive fills from Matcher
-2. Add to pending queue
-3. When queue reaches batchSize OR timeout expires:
-   a. Check current gas price
-   b. If gasPrice > maxGasPrice: wait and retry
-   c. Estimate gas for batch
-   d. Call settlement.batchFill(fills)
-   e. Wait for confirmation
-   f. On success: clear queue
-   g. On failure: retry or mark permanent failure
+1. 从撮合器接收成交记录
+2. 添加到待处理队列
+3. 当队列达到 batchSize 或超时时:
+   a. 检查当前 gas 价格
+   b. 如果 gasPrice > maxGasPrice: 等待并重试
+   c. 估算批次所需 gas
+   d. 调用 settlement.batchFill(fills)
+   e. 等待确认
+   f. 成功时: 清空队列
+   g. 失败时: 重试或标记为永久失败
 ```
 
-### Error Handling
+### 错误处理
 
-**Temporary Failures** (retry):
-- Network timeout
-- Gas price too high
-- Nonce too low
-- Transaction underpriced
+**临时性失败** (重试):
+- 网络超时
+- Gas 价格过高
+- Nonce 过低
+- 交易定价过低
 
-**Permanent Failures** (no retry):
-- Invalid signature
-- Order expired
-- Insufficient balance
-- Order overfill
+**永久性失败** (不重试):
+- 签名无效
+- 订单已过期
+- 余额不足
+- 订单超量成交
 
-### Statistics
+### 统计信息
 
 ```typescript
 {
@@ -611,48 +611,48 @@ const config = {
 
 ---
 
-## Market Manager
+## 市场管理器
 
-**Location**: `services/manager/src/manager.ts`
+**位置**: `services/manager/src/manager.ts`
 
-The Market Manager automatically discovers new markets and resolves expired markets.
+市场管理器自动发现新市场并解析已过期的市场。
 
-### Features
+### 功能特性
 
-1. **Event Listening**: Monitors `MarketCreated` events from MarketRegistryV2
-2. **Periodic Scanning**: Checks for resolvable markets every 30 seconds
-3. **Auto Resolution**: Calls `MarketRegistryV2.resolveMarket()` when ready
-4. **Market Caching**: Maintains local cache of markets synced from blockchain
+1. **事件监听**: 监控 MarketRegistryV2 的 `MarketCreated` 事件
+2. **定期扫描**: 每 30 秒检查可解析的市场
+3. **自动解析**: 准备就绪时调用 `MarketRegistryV2.resolveMarket()`
+4. **市场缓存**: 维护从区块链同步的市场本地缓存
 
-### Market Discovery
+### 市场发现
 
-**Event-Based**:
+**基于事件**:
 ```typescript
-// Listen for MarketCreated events
+// 监听 MarketCreated 事件
 marketRegistry.on("MarketCreated", async (marketId, conditionId, event) => {
-  console.log(`📡 New market discovered: ${marketId}`);
+  console.log(`📡 发现新市场: ${marketId}`);
   await syncMarket(marketId);
 });
 ```
 
-**Periodic Scanning**:
+**定期扫描**:
 ```typescript
 setInterval(async () => {
-  // Get total market count
+  // 获取总市场数量
   const latestId = await marketRegistry.latestMarketId();
 
-  // Sync any missing markets
+  // 同步任何缺失的市场
   for (let id = 1; id <= latestId; id++) {
     if (!markets.has(id.toString())) {
       await syncMarket(id.toString());
     }
   }
-}, 60000); // Every 60 seconds
+}, 60000); // 每 60 秒
 ```
 
-### Market Resolution
+### 市场解析
 
-**Resolution Criteria**:
+**解析条件**:
 ```typescript
 canResolve = (
   market.resolved === false &&
@@ -661,19 +661,19 @@ canResolve = (
 );
 ```
 
-**Resolution Flow**:
+**解析流程**:
 ```typescript
-1. Find all unresolved markets
-2. For each market where canResolve == true:
-   a. Call marketRegistry.resolveMarket(marketId)
-   b. Wait for confirmation
-   c. Update local cache
-   d. Log resolution details
+1. 查找所有未解析的市场
+2. 对于每个 canResolve == true 的市场:
+   a. 调用 marketRegistry.resolveMarket(marketId)
+   b. 等待确认
+   c. 更新本地缓存
+   d. 记录解析详情
 ```
 
-**Resolve Buffer**: 60 seconds after market end time to ensure price data is available
+**解析缓冲期**: 市场结束时间后 60 秒,以确保价格数据可用
 
-### Statistics
+### 统计信息
 
 ```typescript
 {
@@ -687,95 +687,95 @@ canResolve = (
 
 ---
 
-## Runner
+## 运行器
 
-**Location**: `services/runner.ts`
+**位置**: `services/runner.ts`
 
-The Runner is the unified service launcher that starts and monitors all backend services.
+运行器是启动和监控所有后端服务的统一服务启动器。
 
-### Services Started
+### 启动的服务
 
 ```typescript
-1. API Server (Express)
-2. Matching Engine
-3. Relayer
-4. Market Manager
+1. API 服务器 (Express)
+2. 撮合引擎
+3. 中继器
+4. 市场管理器
 ```
 
-### Monitoring
+### 监控
 
-The Runner outputs consolidated statistics every **30 seconds**:
+运行器每 **30 秒** 输出合并的统计信息:
 
 ```
-=== PredictX Backend Stats ===
+=== PredictX 后端统计 ===
 
-Matcher:
-  Total Orders: 150
-  Active Books: 4
-  Total Matches: 45
+撮合器:
+  总订单数: 150
+  活跃订单簿: 4
+  总撮合数: 45
 
-Relayer:
-  Total Submissions: 25
-  Total Fills: 180
-  Pending Fills: 8
-  Failed Submissions: 2
+中继器:
+  总提交数: 25
+  总成交数: 180
+  待处理成交: 8
+  失败提交: 2
 
-Market Manager:
-  Total Markets: 15
-  Unresolved: 3
-  Resolutions: 12
+市场管理器:
+  总市场数: 15
+  未解析: 3
+  已解析: 12
 
-API Server:
-  Port: 8080
-  Status: Running
+API 服务器:
+  端口: 8080
+  状态: 运行中
 
 ==============================
 ```
 
-### Startup
+### 启动
 
 ```bash
 cd services
 pnpm start
 ```
 
-Expected output:
+预期输出:
 ```
-Starting PredictX Backend Services...
-✅ Matching Engine started
-✅ Relayer started
-✅ Market Manager started
+启动 PredictX 后端服务...
+✅ 撮合引擎已启动
+✅ 中继器已启动
+✅ 市场管理器已启动
 📡 启动 MarketCreated 事件监听...
-🚀 API Server listening on http://localhost:8080
+🚀 API 服务器正在监听 http://localhost:8080
 ```
 
 ---
 
-## Deployment
+## 部署
 
-### Local Development
+### 本地开发
 
 ```bash
-# Install dependencies
+# 安装依赖
 cd services
 pnpm install
 
-# Configure environment
+# 配置环境
 cp .env.example .env
-# Edit .env with your private keys
+# 使用你的私钥编辑 .env
 
-# Start all services
+# 启动所有服务
 pnpm start
 ```
 
-### Docker Deployment
+### Docker 部署
 
-**Build Image**:
+**构建镜像**:
 ```bash
 docker build -f docker/Dockerfile.backend -t predictx-backend .
 ```
 
-**Run Container**:
+**运行容器**:
 ```bash
 docker run -d \
   --name predictx-backend \
@@ -789,168 +789,168 @@ docker run -d \
 docker-compose -f docker-compose.backend.yml up -d
 ```
 
-### Production Checklist
+### 生产环境检查清单
 
-- [ ] Configure `RELAYER_PRIVATE_KEY` and `MARKET_MANAGER_PRIVATE_KEY`
-- [ ] Ensure accounts have sufficient ETH for gas
-- [ ] Set `CORS_ORIGIN` to frontend domain
-- [ ] Configure `MAX_GAS_PRICE` appropriately
-- [ ] Set up monitoring and alerting
-- [ ] Configure log aggregation (ELK/Loki)
-- [ ] Set up load balancer for API server
-- [ ] Enable rate limiting
-- [ ] Implement database persistence (PostgreSQL)
+- [ ] 配置 `RELAYER_PRIVATE_KEY` 和 `MARKET_MANAGER_PRIVATE_KEY`
+- [ ] 确保账户有足够的 ETH 用于 gas 费用
+- [ ] 将 `CORS_ORIGIN` 设置为前端域名
+- [ ] 适当配置 `MAX_GAS_PRICE`
+- [ ] 设置监控和告警
+- [ ] 配置日志聚合 (ELK/Loki)
+- [ ] 为 API 服务器设置负载均衡器
+- [ ] 启用速率限制
+- [ ] 实现数据库持久化 (PostgreSQL)
 
 ---
 
-## Monitoring & Debugging
+## 监控与调试
 
-### Health Check
+### 健康检查
 
 ```bash
 curl http://localhost:8080/health
 ```
 
-### View Logs
+### 查看日志
 
 **Docker**:
 ```bash
 docker logs -f predictx-backend
 ```
 
-**Local**:
+**本地**:
 ```bash
 cd services
 pnpm start | tee backend.log
 ```
 
-### Debug Order Submission
+### 调试订单提交
 
 ```bash
-# Submit test order
+# 提交测试订单
 curl -X POST http://localhost:8080/api/v1/orders \
   -H "Content-Type: application/json" \
   -d @test-order.json
 
-# Check order status
+# 检查订单状态
 curl http://localhost:8080/api/v1/orders/0x1234...
 ```
 
-### Monitor Matching
+### 监控撮合
 
 ```bash
-# Get orderbook snapshot
+# 获取订单簿快照
 curl http://localhost:8080/api/v1/orderbook/12/1
 
-# Get stats
+# 获取统计信息
 curl http://localhost:8080/api/v1/stats
 ```
 
 ---
 
-## Performance Metrics
+## 性能指标
 
-### API Response Times
+### API 响应时间
 
-- Health check: < 5ms
-- Market list: < 20ms
-- Orderbook query: < 15ms
-- Order submission: < 100ms (including signature verification)
+- 健康检查: < 5ms
+- 市场列表: < 20ms
+- 订单簿查询: < 15ms
+- 订单提交: < 100ms (包括签名验证)
 
-### Matching Performance
+### 撮合性能
 
-- Matching frequency: 1 second
-- Orders per book: 100-1000
-- Matching latency: < 10ms per market
-- Memory usage: ~50MB for 10,000 orders
+- 撮合频率: 1 秒
+- 每个订单簿订单数: 100-1000
+- 撮合延迟: 每个市场 < 10ms
+- 内存使用: 10,000 个订单约 50MB
 
-### Relayer Performance
+### 中继器性能
 
-- Batch size: 10 fills
-- Batch delay: 2 seconds
-- Average gas per batch: ~850k
-- Transaction confirmation: ~2-5 seconds (Socrates Testnet)
+- 批量大小: 10 个成交
+- 批量延迟: 2 秒
+- 每批次平均 gas: 约 850k
+- 交易确认: 约 2-5 秒 (Socrates 测试网)
 
 ---
 
-## Error Codes
+## 错误码
 
-### API Errors
+### API 错误
 
-| Code | Message | Description |
+| 代码 | 消息 | 描述 |
 |------|---------|-------------|
-| 400 | Invalid amount | Order amount <= 0 |
-| 400 | Order expired | Order expiry < current time |
-| 400 | Invalid outcome | Outcome not 0 or 1 |
-| 400 | Invalid signature | EIP-712 signature verification failed |
-| 400 | Order already filled | Order has no remaining amount |
-| 404 | Order not found | Order ID not in any orderbook |
-| 404 | Market not found | Market ID doesn't exist |
-| 503 | Service unavailable | Matching engine not initialized |
+| 400 | Invalid amount | 订单金额 <= 0 |
+| 400 | Order expired | 订单过期时间 < 当前时间 |
+| 400 | Invalid outcome | 结果不是 0 或 1 |
+| 400 | Invalid signature | EIP-712 签名验证失败 |
+| 400 | Order already filled | 订单无剩余金额 |
+| 404 | Order not found | 订单 ID 不在任何订单簿中 |
+| 404 | Market not found | 市场 ID 不存在 |
+| 503 | Service unavailable | 撮合引擎未初始化 |
 
-### Contract Errors
+### 合约错误
 
-| Selector | Error | Description |
+| 选择器 | 错误 | 描述 |
 |----------|-------|-------------|
-| 0x... | InsufficientBalance() | Not enough deposited collateral |
-| 0x... | InvalidSignature() | Order signature invalid |
-| 0x... | OrderExpired() | Order past expiry timestamp |
-| 0x... | Overfill() | Trying to fill more than order amount |
-| 0x... | UnsupportedCollateral() | Collateral token not whitelisted |
+| 0x... | InsufficientBalance() | 存入的抵押品不足 |
+| 0x... | InvalidSignature() | 订单签名无效 |
+| 0x... | OrderExpired() | 订单已过期 |
+| 0x... | Overfill() | 尝试成交超过订单金额 |
+| 0x... | UnsupportedCollateral() | 抵押品代币未列入白名单 |
 
 ---
 
-## Future Enhancements
+## 未来增强功能
 
-### High Priority
+### 高优先级
 
-1. **Database Persistence**
-   - PostgreSQL for order/fill/market storage
-   - Redis for orderbook caching
-   - Prevents data loss on restart
+1. **数据库持久化**
+   - PostgreSQL 用于订单/成交/市场存储
+   - Redis 用于订单簿缓存
+   - 防止重启时数据丢失
 
-2. **WebSocket Support**
-   - Real-time orderbook updates
-   - Order status notifications
-   - Market resolution events
+2. **WebSocket 支持**
+   - 实时订单簿更新
+   - 订单状态通知
+   - 市场解析事件
 
-3. **Rate Limiting**
-   - Per-IP request limiting
-   - Anti-spam protection
-   - DDoS mitigation
+3. **速率限制**
+   - 按 IP 的请求限制
+   - 反垃圾邮件保护
+   - DDoS 缓解
 
-### Medium Priority
+### 中优先级
 
-4. **Order History API**
-   - Query user's historical orders
-   - Query market trade history
-   - Analytics endpoints
+4. **订单历史 API**
+   - 查询用户的历史订单
+   - 查询市场交易历史
+   - 分析端点
 
-5. **Advanced Matching**
-   - Market orders
-   - Stop loss/take profit
-   - Fill-or-kill, Immediate-or-cancel
+5. **高级撮合**
+   - 市价单
+   - 止损/止盈
+   - 全部成交或取消、立即成交或取消
 
-6. **Monitoring & Alerting**
-   - Prometheus metrics
-   - Grafana dashboards
-   - Telegram/email alerts
+6. **监控与告警**
+   - Prometheus 指标
+   - Grafana 仪表板
+   - Telegram/邮件告警
 
-### Low Priority
+### 低优先级
 
-7. **Horizontal Scaling**
-   - Multiple API server instances
-   - Load balancing
-   - Distributed orderbook
+7. **横向扩展**
+   - 多个 API 服务器实例
+   - 负载均衡
+   - 分布式订单簿
 
 8. **GraphQL API**
-   - Flexible query interface
-   - Subscription support
-   - Better developer experience
+   - 灵活的查询接口
+   - 订阅支持
+   - 更好的开发者体验
 
 ---
 
-## API Client Examples
+## API 客户端示例
 
 ### JavaScript/TypeScript
 
@@ -959,7 +959,7 @@ import { ethers } from 'ethers';
 
 const API_URL = 'http://localhost:8080';
 
-// Submit order
+// 提交订单
 async function submitOrder(wallet, order) {
   const domain = {
     name: 'PredictXSettlementV2',
@@ -979,7 +979,7 @@ async function submitOrder(wallet, order) {
   return await response.json();
 }
 
-// Get orderbook
+// 获取订单簿
 async function getOrderbook(marketId, outcome) {
   const response = await fetch(
     `${API_URL}/api/v1/orderbook/${marketId}/${outcome}`
@@ -995,12 +995,12 @@ import requests
 
 API_URL = 'http://localhost:8080'
 
-# Get markets
+# 获取市场
 def get_markets():
     response = requests.get(f'{API_URL}/api/v1/markets')
     return response.json()
 
-# Get orderbook
+# 获取订单簿
 def get_orderbook(market_id, outcome):
     response = requests.get(
         f'{API_URL}/api/v1/orderbook/{market_id}/{outcome}'
@@ -1010,50 +1010,50 @@ def get_orderbook(market_id, outcome):
 
 ---
 
-## Troubleshooting
+## 故障排查
 
-### Orders Not Matching
+### 订单不撮合
 
-**Possible Causes**:
-1. Price doesn't cross (buy price < sell price)
-2. Different orderbooks (different marketId or outcome)
-3. Order expired
-4. Order already filled
+**可能原因**:
+1. 价格未交叉 (买价 < 卖价)
+2. 不同的订单簿 (不同的 marketId 或 outcome)
+3. 订单已过期
+4. 订单已成交
 
-**Solutions**:
-- Check order prices and parameters
-- View matcher logs for matching activity
-- Verify order not expired
+**解决方案**:
+- 检查订单价格和参数
+- 查看撮合器日志了解撮合活动
+- 验证订单未过期
 
-### Fills Not Submitting
+### 成交未提交
 
-**Possible Causes**:
-1. Relayer not running
-2. Gas price too high
-3. Insufficient ETH balance
-4. Network connectivity issues
+**可能原因**:
+1. 中继器未运行
+2. Gas 价格过高
+3. ETH 余额不足
+4. 网络连接问题
 
-**Solutions**:
-- Check Relayer process is running
-- Increase `MAX_GAS_PRICE`
-- Ensure Relayer account has sufficient ETH
-- Check RPC connection
+**解决方案**:
+- 检查中继器进程是否运行
+- 增加 `MAX_GAS_PRICE`
+- 确保中继器账户有足够的 ETH
+- 检查 RPC 连接
 
-### Markets Not Auto-Resolving
+### 市场未自动解析
 
-**Possible Causes**:
-1. Market Manager not running
-2. Insufficient ETH balance
-3. Oracle price not available
-4. Resolve buffer not elapsed
+**可能原因**:
+1. 市场管理器未运行
+2. ETH 余额不足
+3. 预言机价格不可用
+4. 解析缓冲期未过
 
-**Solutions**:
-- Check Market Manager process
-- Ensure Market Manager account has ETH
-- Wait 60 seconds after market endTime
-- Check Oracle adapter has price data
+**解决方案**:
+- 检查市场管理器进程
+- 确保市场管理器账户有 ETH
+- 在市场 endTime 后等待 60 秒
+- 检查预言机适配器是否有价格数据
 
 ---
 
-For smart contract details, see **CONTRACTS.md**.
-For frontend integration, see **FRONTEND.md**.
+有关智能合约详情,请参阅 **CONTRACTS.md**。
+有关前端集成,请参阅 **FRONTEND.md**。

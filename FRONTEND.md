@@ -1,94 +1,94 @@
-# Frontend Documentation
+# 前端文档
 
-This document describes the frontend architecture, components, and integration guide for the PredictX prediction market platform.
+本文档描述了 PredictX 预言市场平台的前端架构、组件和集成指南。
 
-## Architecture Overview
+## 架构总览
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                         Frontend                             │
+│                         前端                                 │
 │                   (React + ethers.js)                        │
 │                                                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │   Account    │  │   Market     │  │    Trade     │      │
-│  │   Panel      │  │   List       │  │    Form      │      │
+│  │   账户       │  │   市场       │  │    交易      │      │
+│  │   面板       │  │   列表       │  │    表单      │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 │                                                              │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐      │
-│  │  Orderbook   │  │  My Orders   │  │  Position    │      │
-│  │   Display    │  │   Panel      │  │   Panel      │      │
+│  │  订单簿      │  │  我的订单    │  │  持仓        │      │
+│  │  显示        │  │  面板        │  │  面板        │      │
 │  └──────────────┘  └──────────────┘  └──────────────┘      │
 └────────────┬─────────────────────────────────────┬──────────┘
              │                                     │
              ▼                                     ▼
-      REST API Server                      Smart Contracts
-    (Order Submission)                  (Wallet Interaction)
+      REST API 服务器                         智能合约
+    (订单提交)                              (钱包交互)
 ```
 
 ---
 
-## Technology Stack
+## 技术栈
 
-- **Framework**: React 18 + Vite
-- **Language**: TypeScript
-- **Blockchain**: ethers.js v6
-- **Styling**: Inline CSS (currently), migrate to Tailwind/MUI recommended
-- **State Management**: React useState/useEffect (migrate to Zustand/Redux recommended)
+- **框架**: React 18 + Vite
+- **语言**: TypeScript
+- **区块链**: ethers.js v6
+- **样式**: 内联 CSS (当前), 建议迁移到 Tailwind/MUI
+- **状态管理**: React useState/useEffect (建议迁移到 Zustand/Redux)
 
 ---
 
-## Project Structure
+## 项目结构
 
 ```
 apps/web/
 ├── src/
 │   ├── components/
-│   │   ├── AccountPanel.tsx      # Account selection, balances, deposit/withdraw
-│   │   ├── MarketCreator.tsx     # Quick market creation (testing only)
-│   │   ├── TradeForm.tsx         # Buy/Sell order submission
-│   │   ├── OrderBook.tsx         # Orderbook display
-│   │   ├── MyOrders.tsx          # User's active orders
-│   │   ├── PositionPanel.tsx     # User's CTF positions
-│   │   ├── RedemptionPanel.tsx   # Redeem winning positions
-│   │   └── AllPositionsPanel.tsx # All positions across markets
+│   │   ├── AccountPanel.tsx      # 账户选择、余额、存取款
+│   │   ├── MarketCreator.tsx     # 快速创建市场 (仅测试用)
+│   │   ├── TradeForm.tsx         # 买卖订单提交
+│   │   ├── OrderBook.tsx         # 订单簿显示
+│   │   ├── MyOrders.tsx          # 用户活跃订单
+│   │   ├── PositionPanel.tsx     # 用户 CTF 持仓
+│   │   ├── RedemptionPanel.tsx   # 赎回获胜持仓
+│   │   └── AllPositionsPanel.tsx # 所有市场的持仓
 │   ├── lib/
-│   │   ├── contracts.ts          # Contract addresses and ABIs
-│   │   └── ethers.ts             # ethers.js utilities and helpers
-│   ├── App.tsx                   # Main application component
-│   └── main.tsx                  # Application entry point
-├── .env.development              # Development environment variables
+│   │   ├── contracts.ts          # 合约地址和 ABI
+│   │   └── ethers.ts             # ethers.js 工具函数和辅助函数
+│   ├── App.tsx                   # 主应用组件
+│   └── main.tsx                  # 应用入口点
+├── .env.development              # 开发环境变量
 └── package.json
 ```
 
 ---
 
-## Setup & Installation
+## 安装与配置
 
-### Prerequisites
+### 前置条件
 
 - Node.js >= 18
 - pnpm >= 8
 
-### Install Dependencies
+### 安装依赖
 
 ```bash
 cd apps/web
 pnpm install
 ```
 
-### Configure Environment
+### 配置环境
 
-**File**: `apps/web/.env.development`
+**文件**: `apps/web/.env.development`
 
 ```bash
-# API Configuration
+# API 配置
 VITE_API_URL=http://localhost:8080
 
-# Blockchain Configuration
+# 区块链配置
 VITE_RPC_URL=https://rpc-testnet.socrateschain.org
 VITE_CHAIN_ID=1111111
 
-# Demo Accounts (for testing only - DO NOT USE IN PRODUCTION)
+# 演示账户 (仅供测试 - 生产环境中请勿使用)
 VITE_DEMO_TRADER_ADDRESS=0xe40a34B77CBf15b49F6981e4236c76c2f096D261
 VITE_DEMO_TRADER_PK=0x5cdd95739afcbbff215713d1f43bdda57805eca339f4025bff6f78109d766560
 
@@ -98,30 +98,30 @@ VITE_LIQUIDITY_PROVIDER_PK=0xbdaf9384fcdbcfc432001bfec2713e81ffbae2cb617305a8d76
 VITE_MARKET_CREATOR_PK=0xb304b6c6a8ed29942c2414d1dd2aaa9817aa5ff42f80e5634e2b1e1d8fc63f47
 ```
 
-**WARNING**: Demo private keys are for local testing only. Remove before production deployment.
+**警告**: 演示私钥仅供本地测试使用。生产部署前请删除。
 
-### Start Development Server
+### 启动开发服务器
 
 ```bash
 pnpm dev
 ```
 
-Application will be available at `http://localhost:5173` (or next available port).
+应用将在 `http://localhost:5173` (或下一个可用端口) 上运行。
 
 ---
 
-## Core Components
+## 核心组件
 
 ### AccountPanel.tsx
 
-**Purpose**: Manage user accounts, display balances, deposit/withdraw collateral
+**用途**: 管理用户账户、显示余额、存取抵押品
 
-**Key Features**:
-- Switch between demo accounts or connect MetaMask
-- Display USDC balance, deposited collateral, and CTF positions
-- Deposit/withdraw USDC to/from Settlement contract
+**主要功能**:
+- 在演示账户之间切换或连接 MetaMask
+- 显示 USDC 余额、已存入抵押品和 CTF 持仓
+- 向 Settlement 合约存入/提取 USDC
 
-**Usage**:
+**用法**:
 ```tsx
 <AccountPanel
   account={selectedAccount}
@@ -129,10 +129,10 @@ Application will be available at `http://localhost:5173` (or next available port
 />
 ```
 
-**Key Functions**:
+**关键函数**:
 
 ```typescript
-// Load balances
+// 加载余额
 const loadBalances = async () => {
   const usdcBalance = await usdc.balanceOf(account.address);
   const collateralBalance = await settlement.collateralBalances(
@@ -141,7 +141,7 @@ const loadBalances = async () => {
   );
 };
 
-// Deposit collateral
+// 存入抵押品
 const handleDeposit = async (amount: string) => {
   const wallet = createWallet(account.privateKey);
   const usdc = getUSDC(wallet);
@@ -151,7 +151,7 @@ const handleDeposit = async (amount: string) => {
   await settlement.depositCollateral(USDC_ADDRESS, parseUSDC(amount));
 };
 
-// Withdraw collateral
+// 提取抵押品
 const handleWithdraw = async (amount: string) => {
   const wallet = createWallet(account.privateKey);
   const settlement = getSettlement(wallet);
@@ -164,26 +164,26 @@ const handleWithdraw = async (amount: string) => {
 
 ### MarketCreator.tsx
 
-**Purpose**: Quick market creation for testing (admin/testing only)
+**用途**: 快速创建市场用于测试 (仅管理员/测试使用)
 
-**Key Features**:
-- Create BTC UP/DOWN markets with custom timeframes
-- Auto-calculate next minute-aligned start time
-- Display created market details
+**主要功能**:
+- 创建自定义时间范围的 BTC 涨跌市场
+- 自动计算下一个分钟对齐的开始时间
+- 显示已创建的市场详情
 
-**Usage**:
+**用法**:
 ```tsx
 <MarketCreator onMarketCreated={refreshMarkets} />
 ```
 
-**Key Functions**:
+**关键函数**:
 
 ```typescript
 const handleCreateMarket = async (timeframe: number) => {
   const wallet = createWallet(import.meta.env.VITE_MARKET_CREATOR_PK);
   const registry = getMarketRegistry(wallet);
 
-  // Calculate next minute-aligned timestamp + buffer
+  // 计算下一个分钟对齐的时间戳 + 缓冲
   const now = Math.floor(Date.now() / 1000);
   const nextMinute = Math.ceil((now + 60) / 60) * 60;
 
@@ -196,67 +196,67 @@ const handleCreateMarket = async (timeframe: number) => {
   );
 
   const receipt = await tx.wait();
-  // Parse MarketCreated event for marketId
+  // 解析 MarketCreated 事件获取 marketId
 };
 ```
 
-**WARNING**: This component should only be visible in development mode and only to authorized accounts.
+**警告**: 此组件应仅在开发模式下对授权账户可见。
 
 ---
 
 ### TradeForm.tsx
 
-**Purpose**: Submit buy/sell orders for specific market outcomes
+**用途**: 为特定市场结果提交买卖订单
 
-**Key Features**:
-- Buy or Sell order submission
-- Price input (0-1 range, converted to BPS)
-- Amount input with quick select buttons
-- Cost/profit calculation preview
-- EIP-712 order signing
+**主要功能**:
+- 提交买入或卖出订单
+- 价格输入 (0-1 范围, 转换为 BPS)
+- 金额输入及快速选择按钮
+- 成本/利润计算预览
+- EIP-712 订单签名
 
-**Usage**:
+**用法**:
 ```tsx
 <TradeForm
   market={selectedMarket}
   account={currentAccount}
-  outcome={1} // 0=DOWN, 1=UP
-  side="buy" // or "sell"
+  outcome={1} // 0=跌, 1=涨
+  side="buy" // 或 "sell"
   onOrderSubmitted={handleOrderSubmitted}
 />
 ```
 
-**Order Submission Flow**:
+**订单提交流程**:
 
 ```typescript
 const handleSubmit = async () => {
-  // 1. Create wallet from private key
+  // 1. 从私钥创建钱包
   const wallet = createWallet(account.privateKey);
 
-  // 2. Prepare order
+  // 2. 准备订单
   const order: OrderV2 = {
     maker: account.address,
     marketId: market.id,
     conditionId: market.conditionId,
-    outcome: outcome, // 0=DOWN, 1=UP
+    outcome: outcome, // 0=跌, 1=涨
     collateral: USDC_ADDRESS,
-    pricePips: parsePriceToPips(price), // Convert 0.55 → "5500"
-    amount: parseUSDC(amount).toString(), // Convert 100 → "100000000"
+    pricePips: parsePriceToPips(price), // 将 0.55 → "5500"
+    amount: parseUSDC(amount).toString(), // 将 100 → "100000000"
     makerFeeBps: 30, // 0.3%
     takerFeeBps: 30, // 0.3%
-    expiry: Math.floor(Date.now() / 1000) + 86400, // 24h
+    expiry: Math.floor(Date.now() / 1000) + 86400, // 24小时
     salt: ethers.hexlify(ethers.randomBytes(16)),
     nonce: Math.floor(Date.now() / 1000),
-    mintOnFill: true, // Always true in V2
+    mintOnFill: true, // V2 中始终为 true
     allowedTaker: '0x0000000000000000000000000000000000000000',
     chainId: CHAIN_ID,
     verifyingContract: SETTLEMENT_ADDRESS,
   };
 
-  // 3. Sign order with EIP-712
+  // 3. 使用 EIP-712 签名订单
   const signature = await signOrder(wallet, order);
 
-  // 4. Submit to API
+  // 4. 提交到 API
   const response = await fetch(`${API_URL}/api/v1/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -279,15 +279,15 @@ const handleSubmit = async () => {
 };
 ```
 
-**Price Conversion**:
+**价格转换**:
 ```typescript
-// User inputs: 0.55 (55%)
-// Convert to BPS: 5500
+// 用户输入: 0.55 (55%)
+// 转换为 BPS: 5500
 function parsePriceToPips(price: string): string {
   return Math.round(parseFloat(price) * 10000).toString();
 }
 
-// Display BPS as percentage
+// 将 BPS 显示为百分比
 function formatPrice(pricePips: string): string {
   return (parseInt(pricePips) / 100).toFixed(2) + '%';
 }
@@ -297,15 +297,15 @@ function formatPrice(pricePips: string): string {
 
 ### OrderBook.tsx
 
-**Purpose**: Display current orderbook (bids and asks) for a market outcome
+**用途**: 显示市场结果的当前订单簿 (买单和卖单)
 
-**Key Features**:
-- Real-time orderbook display (polled every 5s)
-- Price level aggregation
-- Order count per price level
-- Total volume at each level
+**主要功能**:
+- 实时订单簿显示 (每 5 秒轮询)
+- 价格级别聚合
+- 每个价格级别的订单数量
+- 每个级别的总交易量
 
-**Usage**:
+**用法**:
 ```tsx
 <OrderBook
   marketId={market.id}
@@ -313,7 +313,7 @@ function formatPrice(pricePips: string): string {
 />
 ```
 
-**Data Fetching**:
+**数据获取**:
 
 ```typescript
 const loadOrderbook = async () => {
@@ -326,7 +326,7 @@ const loadOrderbook = async () => {
   setAsks(data.asks);
 };
 
-// Auto-refresh every 5 seconds
+// 每 5 秒自动刷新
 useEffect(() => {
   loadOrderbook();
   const interval = setInterval(loadOrderbook, 5000);
@@ -338,15 +338,15 @@ useEffect(() => {
 
 ### MyOrders.tsx
 
-**Purpose**: Display user's active orders with cancel functionality
+**用途**: 显示用户的活跃订单及取消功能
 
-**Key Features**:
-- Show all orders submitted by current account
-- Display order status (active/filled/cancelled)
-- Cancel active orders
-- Filter by market/outcome
+**主要功能**:
+- 显示当前账户提交的所有订单
+- 显示订单状态 (活跃/已成交/已取消)
+- 取消活跃订单
+- 按市场/结果筛选
 
-**Usage**:
+**用法**:
 ```tsx
 <MyOrders
   account={currentAccount}
@@ -355,7 +355,7 @@ useEffect(() => {
 />
 ```
 
-**Order Cancellation**:
+**订单取消**:
 
 ```typescript
 const handleCancelOrder = async (order) => {
@@ -376,14 +376,14 @@ const handleCancelOrder = async (order) => {
 
 ### PositionPanel.tsx
 
-**Purpose**: Display user's CTF position balances
+**用途**: 显示用户的 CTF 持仓余额
 
-**Key Features**:
-- Show DOWN and UP token balances for each market
-- Real-time balance updates
-- Position value calculation
+**主要功能**:
+- 显示每个市场的跌和涨代币余额
+- 实时余额更新
+- 持仓价值计算
 
-**Usage**:
+**用法**:
 ```tsx
 <PositionPanel
   account={currentAccount}
@@ -391,7 +391,7 @@ const handleCancelOrder = async (order) => {
 />
 ```
 
-**Position Querying**:
+**持仓查询**:
 
 ```typescript
 const loadPositions = async () => {
@@ -399,11 +399,11 @@ const loadPositions = async () => {
   const positions = [];
 
   for (const market of markets) {
-    // Query DOWN position
+    // 查询跌持仓
     const downPositionId = getPositionId(market.conditionId, 0);
     const downBalance = await ctf.balanceOf(account.address, downPositionId);
 
-    // Query UP position
+    // 查询涨持仓
     const upPositionId = getPositionId(market.conditionId, 1);
     const upBalance = await ctf.balanceOf(account.address, upPositionId);
 
@@ -418,13 +418,13 @@ const loadPositions = async () => {
 };
 ```
 
-**Position ID Calculation**:
+**持仓 ID 计算**:
 
 ```typescript
 import { solidityPackedKeccak256 } from 'ethers';
 
 function getPositionId(conditionId: string, outcome: number): string {
-  const indexSet = outcome === 0 ? 1 : 2; // 1 for DOWN, 2 for UP
+  const indexSet = outcome === 0 ? 1 : 2; // 1 表示跌, 2 表示涨
 
   const collectionId = solidityPackedKeccak256(
     ['bytes32', 'uint256'],
@@ -444,14 +444,14 @@ function getPositionId(conditionId: string, outcome: number): string {
 
 ### RedemptionPanel.tsx
 
-**Purpose**: Redeem winning positions after market resolution
+**用途**: 在市场解决后赎回获胜持仓
 
-**Key Features**:
-- Show only redeemable positions (resolved markets with winning outcomes)
-- Display potential payout
-- One-click redemption
+**主要功能**:
+- 仅显示可赎回持仓 (已解决的市场及获胜结果)
+- 显示潜在收益
+- 一键赎回
 
-**Usage**:
+**用法**:
 ```tsx
 <RedemptionPanel
   account={currentAccount}
@@ -459,14 +459,14 @@ function getPositionId(conditionId: string, outcome: number): string {
 />
 ```
 
-**Redemption Flow**:
+**赎回流程**:
 
 ```typescript
 const loadRedeemablePositions = async () => {
   const ctf = getCTF(provider);
   const redeemable = [];
 
-  // Filter only resolved markets
+  // 仅筛选已解决的市场
   const resolvedMarkets = markets.filter(m => m.resolved && m.winningOutcome !== null);
 
   for (const market of resolvedMarkets) {
@@ -474,14 +474,14 @@ const loadRedeemablePositions = async () => {
       const positionId = getPositionId(market.conditionId, outcome);
       const balance = await ctf.balanceOf(account.address, positionId);
 
-      // Only include winning positions with non-zero balance
+      // 仅包含余额非零的获胜持仓
       if (balance > 0n && outcome === market.winningOutcome) {
         redeemable.push({
           marketId: market.id,
           conditionId: market.conditionId,
           outcome,
           balance: formatUnits(balance, 6),
-          payout: formatUnits(balance, 6), // 1:1 for winning outcome
+          payout: formatUnits(balance, 6), // 获胜结果为 1:1
         });
       }
     }
@@ -502,29 +502,29 @@ const handleRedeem = async (position) => {
     [indexSet]
   );
 
-  // Refresh balances
+  // 刷新余额
   await loadRedeemablePositions();
 };
 ```
 
 ---
 
-## Utility Functions
+## 工具函数
 
 ### lib/ethers.ts
 
-**Purpose**: Centralized ethers.js utilities and contract helpers
+**用途**: 集中的 ethers.js 工具函数和合约辅助函数
 
-**Key Functions**:
+**关键函数**:
 
 ```typescript
-// Create wallet from private key
+// 从私钥创建钱包
 export function createWallet(privateKey: string): ethers.Wallet {
   const provider = new ethers.JsonRpcProvider(import.meta.env.VITE_RPC_URL);
   return new ethers.Wallet(privateKey, provider);
 }
 
-// Get contract instances
+// 获取合约实例
 export function getUSDC(signerOrProvider: any) {
   return new ethers.Contract(USDC_ADDRESS, USDC_ABI, signerOrProvider);
 }
@@ -541,7 +541,7 @@ export function getMarketRegistry(signerOrProvider: any) {
   return new ethers.Contract(MARKET_REGISTRY_ADDRESS, REGISTRY_ABI, signerOrProvider);
 }
 
-// Format USDC amounts
+// 格式化 USDC 金额
 export function parseUSDC(amount: string): bigint {
   return ethers.parseUnits(amount, 6);
 }
@@ -550,7 +550,7 @@ export function formatUSDC(amount: bigint): string {
   return ethers.formatUnits(amount, 6);
 }
 
-// Price conversion
+// 价格转换
 export function parsePriceToPips(price: string): string {
   return Math.round(parseFloat(price) * 10000).toString();
 }
@@ -559,7 +559,7 @@ export function formatPriceFromPips(pricePips: string): string {
   return (parseInt(pricePips) / 10000).toString();
 }
 
-// EIP-712 order signing
+// EIP-712 订单签名
 export async function signOrder(
   wallet: ethers.Wallet,
   order: OrderV2
@@ -600,7 +600,7 @@ export async function signOrder(
 
 ### lib/contracts.ts
 
-**Purpose**: Contract addresses and constants
+**用途**: 合约地址和常量
 
 ```typescript
 export const USDC_ADDRESS = '0x0CE332cbf8AA68675C541BBBCe9D6E4a3a4778Ce';
@@ -618,101 +618,101 @@ export const MARKET_REGISTRY_ABI = [ /* ... */ ];
 
 ---
 
-## User Workflows
+## 用户工作流程
 
-### 1. Complete Trading Flow
+### 1. 完整交易流程
 
-**Step 1: Select Account**
+**步骤 1: 选择账户**
 ```
-User selects "Demo Trader" or "Liquidity Provider" from dropdown
-→ Displays USDC balance, deposited collateral, CTF positions
-```
-
-**Step 2: Deposit Collateral**
-```
-User clicks "Deposit 50 USDC"
-→ Approve USDC spending
-→ Call settlement.depositCollateral()
-→ Wait for confirmation
-→ Refresh balances
+用户从下拉菜单中选择 "演示交易员" 或 "流动性提供者"
+→ 显示 USDC 余额、已存入抵押品、CTF 持仓
 ```
 
-**Step 3: Select Market**
+**步骤 2: 存入抵押品**
 ```
-User selects an active market from market list
-→ Displays market details, countdown to expiry
-→ Loads orderbook for both outcomes
-```
-
-**Step 4: Submit Order**
-```
-User enters:
-- Price: 0.55 (55%)
-- Amount: 100 USDC
-- Side: BUY
-- Outcome: UP
-
-→ Sign EIP-712 order
-→ Submit to API
-→ Order appears in "My Orders" panel
-→ Order appears in orderbook
+用户点击 "存入 50 USDC"
+→ 批准 USDC 支出
+→ 调用 settlement.depositCollateral()
+→ 等待确认
+→ 刷新余额
 ```
 
-**Step 5: Wait for Match**
+**步骤 3: 选择市场**
 ```
-Matcher finds crossing orders
-→ Relayer submits fill to blockchain
-→ User receives UP tokens
-→ Position appears in "Position Panel"
-```
-
-**Step 6: Wait for Market Resolution**
-```
-Market expires
-→ MarketManager resolves market
-→ Market shows winning outcome
-→ Winning positions appear in "Redemption Panel"
+用户从市场列表中选择一个活跃市场
+→ 显示市场详情、到期倒计时
+→ 加载两个结果的订单簿
 ```
 
-**Step 7: Redeem Winnings**
+**步骤 4: 提交订单**
 ```
-User clicks "Redeem" for winning position
-→ Call ctf.redeemPositions()
-→ Receive USDC back to deposited balance
+用户输入:
+- 价格: 0.55 (55%)
+- 金额: 100 USDC
+- 方向: 买入
+- 结果: 涨
+
+→ 签署 EIP-712 订单
+→ 提交到 API
+→ 订单显示在 "我的订单" 面板
+→ 订单出现在订单簿中
 ```
 
-**Step 8: Withdraw**
+**步骤 5: 等待匹配**
 ```
-User clicks "Withdraw All"
-→ Call settlement.withdrawCollateral()
-→ USDC appears in wallet balance
+撮合器找到交叉订单
+→ 中继器提交成交到区块链
+→ 用户收到涨代币
+→ 持仓显示在 "持仓面板"
+```
+
+**步骤 6: 等待市场解决**
+```
+市场到期
+→ MarketManager 解决市场
+→ 市场显示获胜结果
+→ 获胜持仓显示在 "赎回面板"
+```
+
+**步骤 7: 赎回收益**
+```
+用户点击获胜持仓的 "赎回"
+→ 调用 ctf.redeemPositions()
+→ 收到 USDC 返回到已存入余额
+```
+
+**步骤 8: 提取**
+```
+用户点击 "全部提取"
+→ 调用 settlement.withdrawCollateral()
+→ USDC 出现在钱包余额中
 ```
 
 ---
 
-### 2. MetaMask Integration (Recommended for Production)
+### 2. MetaMask 集成 (生产环境推荐)
 
-**Connect Wallet**:
+**连接钱包**:
 ```typescript
 const connectWallet = async () => {
   if (typeof window.ethereum !== 'undefined') {
     try {
-      // Request account access
+      // 请求账户访问
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts',
       });
 
-      // Check network
+      // 检查网络
       const chainId = await window.ethereum.request({
         method: 'eth_chainId',
       });
 
-      if (chainId !== '0x10F447') { // 1111111 in hex
-        alert('Please switch to Socrates Testnet');
+      if (chainId !== '0x10F447') { // 1111111 的十六进制
+        alert('请切换到 Socrates 测试网');
         return;
       }
 
-      // Create provider and signer
+      // 创建 provider 和 signer
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
 
@@ -721,15 +721,15 @@ const connectWallet = async () => {
         signer,
       });
     } catch (error) {
-      console.error('Failed to connect wallet:', error);
+      console.error('连接钱包失败:', error);
     }
   } else {
-    alert('Please install MetaMask');
+    alert('请安装 MetaMask');
   }
 };
 ```
 
-**Network Switching**:
+**网络切换**:
 ```typescript
 const switchToSocrates = async () => {
   try {
@@ -738,7 +738,7 @@ const switchToSocrates = async () => {
       params: [{ chainId: '0x10F447' }], // 1111111
     });
   } catch (switchError: any) {
-    // Network not added, add it
+    // 网络未添加,添加它
     if (switchError.code === 4902) {
       await window.ethereum.request({
         method: 'wallet_addEthereumChain',
@@ -761,23 +761,23 @@ const switchToSocrates = async () => {
 
 ---
 
-## Styling
+## 样式
 
-### Current Approach
+### 当前方案
 
-The current implementation uses inline CSS. This is acceptable for prototyping but not recommended for production.
+当前实现使用内联 CSS。这对于原型设计是可以接受的,但不建议用于生产环境。
 
-**Example**:
+**示例**:
 ```tsx
 <div style={{ padding: '20px', border: '2px solid #4CAF50', borderRadius: '8px' }}>
-  <h3 style={{ margin: '0 0 15px 0', color: '#4CAF50' }}>BUY UP</h3>
+  <h3 style={{ margin: '0 0 15px 0', color: '#4CAF50' }}>买入涨</h3>
   <input type="number" style={{ width: '100%', padding: '8px' }} />
 </div>
 ```
 
-### Recommended Approach
+### 推荐方案
 
-**Option 1: Tailwind CSS**
+**方案 1: Tailwind CSS**
 ```bash
 pnpm add -D tailwindcss postcss autoprefixer
 npx tailwindcss init -p
@@ -785,12 +785,12 @@ npx tailwindcss init -p
 
 ```tsx
 <div className="p-5 border-2 border-green-500 rounded-lg">
-  <h3 className="mb-4 text-green-500 font-bold">BUY UP</h3>
+  <h3 className="mb-4 text-green-500 font-bold">买入涨</h3>
   <input type="number" className="w-full p-2 border rounded" />
 </div>
 ```
 
-**Option 2: Material-UI**
+**方案 2: Material-UI**
 ```bash
 pnpm add @mui/material @emotion/react @emotion/styled
 ```
@@ -799,22 +799,22 @@ pnpm add @mui/material @emotion/react @emotion/styled
 import { Box, Typography, TextField } from '@mui/material';
 
 <Box sx={{ p: 2, border: '2px solid green', borderRadius: 1 }}>
-  <Typography variant="h6" color="green">BUY UP</Typography>
+  <Typography variant="h6" color="green">买入涨</Typography>
   <TextField fullWidth type="number" />
 </Box>
 ```
 
 ---
 
-## State Management
+## 状态管理
 
-### Current Approach
+### 当前方案
 
-The current implementation uses React's built-in `useState` and `useEffect` hooks. This works for small applications but becomes unwieldy as complexity grows.
+当前实现使用 React 内置的 `useState` 和 `useEffect` hooks。这适用于小型应用,但随着复杂性增加会变得难以管理。
 
-### Recommended Approach
+### 推荐方案
 
-**Option 1: Zustand (Lightweight)**
+**方案 1: Zustand (轻量级)**
 
 ```bash
 pnpm add zustand
@@ -842,11 +842,11 @@ export const useStore = create<AppState>((set) => ({
   addOrder: (order) => set((state) => ({ orders: [...state.orders, order] })),
 }));
 
-// Usage in components
+// 在组件中使用
 const { account, setAccount } = useStore();
 ```
 
-**Option 2: Redux Toolkit (Full-featured)**
+**方案 2: Redux Toolkit (功能完整)**
 
 ```bash
 pnpm add @reduxjs/toolkit react-redux
@@ -854,11 +854,11 @@ pnpm add @reduxjs/toolkit react-redux
 
 ---
 
-## Real-time Updates
+## 实时更新
 
-### Current Approach
+### 当前方案
 
-Polling-based updates with `setInterval`:
+基于轮询的更新,使用 `setInterval`:
 
 ```typescript
 useEffect(() => {
@@ -867,9 +867,9 @@ useEffect(() => {
 }, []);
 ```
 
-### Recommended Approach
+### 推荐方案
 
-**WebSocket Integration** (requires backend WebSocket support):
+**WebSocket 集成** (需要后端 WebSocket 支持):
 
 ```typescript
 import { useEffect, useState } from 'react';
@@ -881,10 +881,10 @@ function useOrderbook(marketId: string, outcome: number) {
   useEffect(() => {
     const socket = io('http://localhost:8080');
 
-    // Subscribe to orderbook updates
+    // 订阅订单簿更新
     socket.emit('subscribe', { marketId, outcome });
 
-    // Listen for updates
+    // 监听更新
     socket.on('orderbook_update', (data) => {
       if (data.marketId === marketId && data.outcome === outcome) {
         setOrderbook(data.orderbook);
@@ -903,11 +903,11 @@ function useOrderbook(marketId: string, outcome: number) {
 
 ---
 
-## Error Handling
+## 错误处理
 
-### Current Approach
+### 当前方案
 
-Basic try-catch with status messages:
+基本的 try-catch 加状态消息:
 
 ```typescript
 try {
@@ -915,18 +915,18 @@ try {
   const data = await response.json();
 
   if (data.success) {
-    setStatus('Success!');
+    setStatus('成功!');
   } else {
-    setStatus(`Error: ${data.error}`);
+    setStatus(`错误: ${data.error}`);
   }
 } catch (error: any) {
-  setStatus(`Error: ${error.message}`);
+  setStatus(`错误: ${error.message}`);
 }
 ```
 
-### Recommended Approach
+### 推荐方案
 
-**Centralized Error Handler**:
+**集中式错误处理器**:
 
 ```typescript
 // lib/errors.ts
@@ -940,37 +940,37 @@ export function handleError(error: any): string {
   if (error instanceof APIError) {
     switch (error.code) {
       case 'INVALID_SIGNATURE':
-        return 'Order signature is invalid. Please try again.';
+        return '订单签名无效。请重试。';
       case 'ORDER_EXPIRED':
-        return 'Order has expired. Please create a new order.';
+        return '订单已过期。请创建新订单。';
       case 'INSUFFICIENT_BALANCE':
-        return 'Insufficient balance. Please deposit more collateral.';
+        return '余额不足。请存入更多抵押品。';
       default:
         return error.message;
     }
   }
 
   if (error.code === 'NETWORK_ERROR') {
-    return 'Network error. Please check your connection.';
+    return '网络错误。请检查您的连接。';
   }
 
-  return 'An unexpected error occurred.';
+  return '发生意外错误。';
 }
 
-// Usage
+// 使用
 try {
   await submitOrder(order);
 } catch (error) {
   const message = handleError(error);
-  toast.error(message); // Using toast library
+  toast.error(message); // 使用 toast 库
 }
 ```
 
 ---
 
-## Testing
+## 测试
 
-### Unit Tests
+### 单元测试
 
 ```bash
 pnpm add -D vitest @testing-library/react @testing-library/jest-dom
@@ -983,25 +983,25 @@ import { describe, it, expect } from 'vitest';
 import TradeForm from './TradeForm';
 
 describe('TradeForm', () => {
-  it('validates price input', () => {
+  it('验证价格输入', () => {
     const { getByLabelText } = render(<TradeForm {...props} />);
 
-    const priceInput = getByLabelText('Price');
+    const priceInput = getByLabelText('价格');
     fireEvent.change(priceInput, { target: { value: '1.5' } });
 
-    expect(screen.getByText('Price must be between 0 and 1')).toBeInTheDocument();
+    expect(screen.getByText('价格必须在 0 到 1 之间')).toBeInTheDocument();
   });
 });
 ```
 
 ---
 
-## Performance Optimization
+## 性能优化
 
-### Code Splitting
+### 代码分割
 
 ```typescript
-// Lazy load components
+// 懒加载组件
 import { lazy, Suspense } from 'react';
 
 const TradeForm = lazy(() => import('./components/TradeForm'));
@@ -1009,7 +1009,7 @@ const OrderBook = lazy(() => import('./components/OrderBook'));
 
 function App() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div>加载中...</div>}>
       <TradeForm {...props} />
       <OrderBook {...props} />
     </Suspense>
@@ -1017,21 +1017,21 @@ function App() {
 }
 ```
 
-### Memoization
+### 记忆化
 
 ```typescript
 import { memo, useMemo, useCallback } from 'react';
 
-// Memoize expensive calculations
+// 记忆化昂贵的计算
 const OrderBook = memo(({ bids, asks }) => {
   const totalVolume = useMemo(() => {
     return bids.reduce((sum, bid) => sum + parseInt(bid.amount), 0);
   }, [bids]);
 
-  return <div>Total Volume: {totalVolume}</div>;
+  return <div>总交易量: {totalVolume}</div>;
 });
 
-// Memoize callbacks
+// 记忆化回调
 const handleOrderSubmit = useCallback((order) => {
   submitOrder(order);
 }, []);
@@ -1039,19 +1039,19 @@ const handleOrderSubmit = useCallback((order) => {
 
 ---
 
-## Deployment
+## 部署
 
-### Build for Production
+### 生产构建
 
 ```bash
 pnpm build
 ```
 
-Outputs to `apps/web/dist/`.
+输出到 `apps/web/dist/`。
 
-### Environment Variables
+### 环境变量
 
-Create `.env.production`:
+创建 `.env.production`:
 
 ```bash
 VITE_API_URL=https://api.predictx.com
@@ -1059,23 +1059,23 @@ VITE_RPC_URL=https://rpc-testnet.socrateschain.org
 VITE_CHAIN_ID=1111111
 ```
 
-**Remove all demo private keys from production builds!**
+**从生产构建中删除所有演示私钥!**
 
-### Hosting Options
+### 托管选项
 
-**Option 1: Vercel**
+**方案 1: Vercel**
 ```bash
 pnpm add -g vercel
 vercel --prod
 ```
 
-**Option 2: Netlify**
+**方案 2: Netlify**
 ```bash
 pnpm add -g netlify-cli
 netlify deploy --prod
 ```
 
-**Option 3: Docker**
+**方案 3: Docker**
 ```dockerfile
 FROM node:18-alpine
 WORKDIR /app
@@ -1089,31 +1089,31 @@ CMD ["serve", "-s", "dist", "-l", "3000"]
 
 ---
 
-## Future Enhancements
+## 未来增强
 
-### High Priority
+### 高优先级
 
-1. **Remove Demo Accounts**: Use MetaMask exclusively
-2. **Add Loading States**: Skeleton screens, spinners
-3. **Improve Error Handling**: Toast notifications, detailed messages
-4. **Add WebSocket**: Real-time orderbook updates
-5. **Responsive Design**: Mobile-friendly layout
+1. **移除演示账户**: 仅使用 MetaMask
+2. **添加加载状态**: 骨架屏、加载指示器
+3. **改进错误处理**: Toast 通知、详细错误消息
+4. **添加 WebSocket**: 实时订单簿更新
+5. **响应式设计**: 移动端友好布局
 
-### Medium Priority
+### 中优先级
 
-6. **Advanced Trading UI**: TradingView charts, depth chart
-7. **Position Management**: Detailed P&L, position history
-8. **Trade History**: User's past orders and fills
-9. **Market Analytics**: Volume charts, price history
+6. **高级交易界面**: TradingView 图表、深度图
+7. **持仓管理**: 详细盈亏、持仓历史
+8. **交易历史**: 用户过往订单和成交
+9. **市场分析**: 交易量图表、价格历史
 
-### Low Priority
+### 低优先级
 
-10. **Dark Mode**: Theme toggle
-11. **Multi-language**: i18n support
-12. **Notifications**: Browser notifications for fills/resolutions
-13. **Portfolio Dashboard**: Overall portfolio performance
+10. **深色模式**: 主题切换
+11. **多语言**: 国际化支持
+12. **通知**: 成交/解决的浏览器通知
+13. **投资组合仪表板**: 整体投资组合表现
 
 ---
 
-For backend API integration, see **BACKEND.md**.
-For smart contract interaction, see **CONTRACTS.md**.
+有关后端 API 集成,请参阅 **BACKEND.md**。
+有关智能合约交互,请参阅 **CONTRACTS.md**。
