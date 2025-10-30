@@ -1,0 +1,63 @@
+# Node modules
+node_modules
+**/node_modules
+**/.pnpm-store
+
+# Build artifacts
+**/dist
+**/build
+**/.next
+
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+**/*.swp
+**/*.swo
+
+# Logs
+**/*.log
+**/logs
+
+# Test files
+**/*.test.ts
+**/*.test.js
+**/test
+**/tests
+**/__tests__
+
+# Documentation (except checklist)
+*.md
+!README.md
+!services/PRODUCTION_READINESS_CHECKLIST.md
+
+# Environment files (will be passed via docker-compose)
+.env
+.env.*
+!.env.example
+
+# Cache
+**/.cache
+**/.turbo
+**/cache
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Apps (we only need services)
+apps/
+
+# Chain specific (except artifacts and addresses)
+chain/node_modules
+chain/cache
+chain/typechain-types
+chain/scripts
+chain/test
+chain/deploy
+!chain/artifacts
+!chain/addresses.json
+!chain/test-markets.json

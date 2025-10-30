@@ -3,8 +3,16 @@ import * as fs from "fs";
 import * as path from "path";
 
 async function main() {
-  const [signer] = await ethers.getSigners();
-  console.log("Minting USDC with account:", signer.address);
+  const provider = ethers.provider;
+
+  let faucetSigner = (await ethers.getSigners())[0];
+  const faucetPk = process.env.FAUCET_PK;
+
+  if (faucetPk && faucetPk.startsWith("0x")) {
+    faucetSigner = new ethers.Wallet(faucetPk, provider);
+  }
+
+  console.log("Minting USDC with account:", faucetSigner.address);
 
   // Load addresses
   const addressesPath = path.join(__dirname, "..", "addresses.json");
@@ -18,11 +26,13 @@ async function main() {
   const MockUSDC = await ethers.getContractFactory("MockUSDC");
   const usdc = MockUSDC.attach(usdcAddress);
 
-  console.log("Minting 100,000 USDC to", signer.address);
-  const tx = await usdc.mint(signer.address, ethers.parseUnits("100000", 6));
+  console.log("Minting 100,000 USDC to", faucetSigner.address);
+  const tx = await usdc
+    .connect(faucetSigner)
+    .mint(faucetSigner.address, ethers.parseUnits("100000", 6));
   await tx.wait();
 
-  const balance = await usdc.balanceOf(signer.address);
+  const balance = await usdc.balanceOf(faucetSigner.address);
   console.log("New balance:", ethers.formatUnits(balance, 6), "USDC");
 }
 

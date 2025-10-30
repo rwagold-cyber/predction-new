@@ -1,0 +1,18 @@
+{
+  "name": "@predictx/market-manager",
+  "version": "1.0.0",
+  "description": "Market lifecycle manager for PredictX",
+  "main": "src/market-manager.ts",
+  "scripts": {
+    "start": "ts-node src/market-manager.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "ethers": "^6.15.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.7.5",
+    "typescript": "^5.9.3",
+    "ts-node": "^10.9.2"
+  }
+}

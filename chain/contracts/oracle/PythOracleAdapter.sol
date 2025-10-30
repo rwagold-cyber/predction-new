@@ -13,6 +13,7 @@ contract PythOracleAdapter is IMinuteOracle {
     IPyth public immutable pyth;
     bytes32 public immutable feedId;
     uint256 public immutable coolDownPeriod; // Seconds to wait after minute timestamp
+    int32 public constant EXPECTED_EXPO = -8; // Price has 8 decimal places
 
     constructor(address _pyth, bytes32 _feedId, uint256 _coolDownPeriod) {
         pyth = IPyth(_pyth);
@@ -29,11 +30,21 @@ contract PythOracleAdapter is IMinuteOracle {
             revert Errors.Oracle_InvalidTimestamp();
         }
 
+        // Wait until cool down period has passed to ensure price is finalized
+        if (block.timestamp < uint256(minuteTs) + coolDownPeriod) {
+            return (0, false);
+        }
+
         // Try to get historical price at the exact minute
         try pyth.getPriceAtZeroTimestamp(feedId, uint256(minuteTs)) returns (IPyth.Price memory priceData) {
             // Verify the price is for the exact minute we requested
-            if (priceData.publishTime == minuteTs && priceData.price > 0) {
-                return (priceData.price, true);
+            if (
+                priceData.publishTime == uint256(minuteTs) &&
+                priceData.publishTime % 60 == 0 &&
+                priceData.price > 0 &&
+                priceData.expo == EXPECTED_EXPO
+            ) {
+                return (int256(priceData.price), true);
             }
         } catch {
             // Price not available
@@ -53,13 +64,23 @@ contract PythOracleAdapter is IMinuteOracle {
             return (0, 0, false);
         }
 
+        // Ensure expected exponent
+        if (priceData.expo != EXPECTED_EXPO || priceData.price <= 0) {
+            return (0, 0, false);
+        }
+
         // Verify price is not too old
         if (block.timestamp - priceData.publishTime > 300) {
             // Price older than 5 minutes
             return (0, 0, false);
         }
 
-        return (priceData.price, priceData.publishTime, true);
+        // Ensure we have waited for the cool down period
+        if (block.timestamp < priceData.publishTime + coolDownPeriod) {
+            return (0, 0, false);
+        }
+
+        return (int256(priceData.price), priceData.publishTime, true);
     }
 
     /**
@@ -78,7 +99,11 @@ contract PythOracleAdapter is IMinuteOracle {
         if (block.timestamp < timestamp + coolDownPeriod) return false;
 
         try pyth.getPriceAtZeroTimestamp(feedId, timestamp) returns (IPyth.Price memory priceData) {
-            return priceData.publishTime == timestamp && priceData.price > 0;
+            return
+                priceData.publishTime == timestamp &&
+                priceData.publishTime % 60 == 0 &&
+                priceData.price > 0 &&
+                priceData.expo == EXPECTED_EXPO;
         } catch {
             return false;
         }

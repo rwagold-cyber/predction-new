@@ -158,20 +158,14 @@ export class MatchingEngine {
     const fills: Fill[] = [];
 
     for (const match of matches) {
-      // Buyer is the taker (takes from sell order)
+      // 单向填充：sellOrder 作为 maker，buyOrder.maker 作为 taker
+      // taker 支付 price * amount，获得 outcome 代币
+      // maker 锁定 amount 抵押品，mint 代币后将 outcome 给 taker，保留相反 outcome
       fills.push({
         order: match.sellOrder.order,
         signature: match.sellOrder.signature,
         fillAmount: match.matchAmount,
         taker: match.buyOrder.order.maker,
-      });
-
-      // Seller is the taker (takes from buy order)
-      fills.push({
-        order: match.buyOrder.order,
-        signature: match.buyOrder.signature,
-        fillAmount: match.matchAmount,
-        taker: match.sellOrder.order.maker,
       });
     }
 
@@ -349,7 +343,7 @@ async function main() {
     if (stats.totalOrders > 0) {
       console.log(`Active orders: ${stats.totalOrders}`);
     }
-  }, 5000); // Match every 5 seconds
+  }, 1000); // Match every second
 
   console.log("Matching engine running...");
 
@@ -361,5 +355,3 @@ async function main() {
 if (require.main === module) {
   main().catch(console.error);
 }
-
-export { MatchingEngine };

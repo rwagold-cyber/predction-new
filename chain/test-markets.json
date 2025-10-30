@@ -1,0 +1,26 @@
+[
+  {
+    "id": "4",
+    "conditionId": "0xeebf7687df32f2c03e225d538b09a93c8e1a6db1f6a03085989c76f0cd0f2284",
+    "description": "BTC UP/DOWN 1min",
+    "startTime": 1761772260,
+    "endTime": 1761772320,
+    "timeframe": 1
+  },
+  {
+    "id": "5",
+    "conditionId": "0xfabfc2056f5fefb15363e88840e934604a459e0767f517779f922a19661f09c1",
+    "description": "BTC UP/DOWN 3min",
+    "startTime": 1761772260,
+    "endTime": 1761772440,
+    "timeframe": 3
+  },
+  {
+    "id": "6",
+    "conditionId": "0x94d7eb6e3e9bc75d85a76dcee40bc09db8717617a4bc06184706f28dbe688ca5",
+    "description": "BTC UP/DOWN 5min",
+    "startTime": 1761772260,
+    "endTime": 1761772560,
+    "timeframe": 5
+  }
+]

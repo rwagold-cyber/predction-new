@@ -43,13 +43,13 @@ PredictX V2 是一个基于 CTF (Conditional Token Framework) 的高性能预测
    - ✅ 价格精度: BPS (0-10000)
 
 2. **后端服务 V2**
-   - ✅ REST API (订单/订单簿/统计)
-   - ✅ 撮合引擎 (价格-时间优先)
-   - ✅ 自动撮合 (每 5 秒)
-   - ✅ Relayer 批量提交 (10笔/批)
-   - ✅ Gas 价格监控
-   - ✅ 自动重试机制
-   - ✅ 完整 API 文档
+   - ✅ REST API (订单、市场、统计、订单取消)
+   - ✅ 撮合引擎 (价格-时间优先，每秒循环)
+   - ✅ Relayer 批量提交 (10 笔/批) + 队列重试/僵尸订单防护
+   - ✅ MarketManager 事件监听 + 定期扫描自动解析市场
+   - ✅ Runner 统一启动、30 秒监控输出
+   - ✅ 共享重试工具 (`services/utils/retry.ts`)
+   - ✅ API 参考 (`API_REFERENCE.md`) 与生产检查清单
 
 3. **前端界面**
    - ✅ 钱包连接
@@ -60,11 +60,11 @@ PredictX V2 是一个基于 CTF (Conditional Token Framework) 的高性能预测
 ### ⚠️ 生产环境增强建议
 
 1. **订单存储**: 当前内存 → 建议 PostgreSQL + Redis
-2. **WebSocket**: 当前 HTTP 轮询 → 建议实时推送
-3. **授权方式**: 当前 ERC20 approve → 建议 Permit2
-4. **完整测试**: 需要单元测试和集成测试
-5. **监控告警**: 建议 Prometheus + Grafana
-6. **合约审计**: 生产前需要专业审计
+2. **实时推送**: REST 轮询 → 建议 WebSocket/SSE
+3. **授权优化**: 当前使用 `approve` → 可升级 Permit2/AA
+4. **自动化测试**: 补充单元、集成与长稳测试
+5. **监控告警**: 接入 Prometheus + Grafana、报警渠道
+6. **合约审计**: 主网前须完成第三方审计
 
 ### 📋 可选功能（未实现）
 
@@ -116,16 +116,18 @@ predictx/
 │
 ├── services/                     # 后端服务 V2
 │   ├── api/                      # REST API 服务
-│   │   ├── src/server.ts
-│   │   └── README.md
+│   │   └── src/server.ts
 │   ├── matcher/                  # 撮合引擎
 │   │   ├── src/matcher.ts
 │   │   ├── src/orderbook.ts
 │   │   └── src/signature.ts
 │   ├── relayer/                  # 中继服务
 │   │   └── src/relayer.ts
+│   ├── market-manager/           # 市场生命周期管理
+│   │   └── src/market-manager.ts
+│   ├── utils/retry.ts            # RPC 重试工具
 │   ├── runner.ts                 # 统一服务启动
-│   └── package.json
+│   └── PRODUCTION_READINESS_CHECKLIST.md
 │
 └── apps/
     └── web/                      # React 前端

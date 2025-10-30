@@ -170,7 +170,7 @@ getPriceAt(timestamp)                            // 获取历史价格
 1. 接收签名订单
 2. 验证签名和基本参数
 3. 添加到相应订单簿
-4. 每 5 秒运行撮合
+4. 每秒运行撮合
 5. 生成 Fill 结构
 6. 发送到 Relayer
 
@@ -253,7 +253,7 @@ await matchingEngine.addOrder(order, signature, "BUY");
 ### 4. 撮合 / Matching
 
 ```typescript
-// Matcher 每 5 秒运行
+// Matcher 每秒运行
 const matches = matchingEngine.matchAll();
 
 // 转换为 Fills

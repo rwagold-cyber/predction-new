@@ -41,4 +41,5 @@ export interface SubmissionResult {
   error?: string;
   gasUsed?: bigint;
   fillCount?: number;
+  retryable?: boolean; // 是否为可重试错误
 }

@@ -1,0 +1,33 @@
+{
+  "passed": 0,
+  "failed": 4,
+  "tests": [
+    {
+      "name": "Enhanced Oracle",
+      "status": "❌ FAIL"
+    },
+    {
+      "name": "Collateral Withdrawal",
+      "status": "❌ FAIL",
+      "error": "execution reverted"
+    },
+    {
+      "name": "Market Resolution",
+      "status": "⚠️  SKIP (market not ended)"
+    },
+    {
+      "name": "CTF Position Query",
+      "status": "❌ FAIL",
+      "error": "posIdYes.slice is not a function"
+    },
+    {
+      "name": "CTF Redemption",
+      "status": "⚠️  SKIP (market not resolved)"
+    },
+    {
+      "name": "Gas Measurements",
+      "status": "❌ FAIL",
+      "error": "execution reverted"
+    }
+  ]
+}

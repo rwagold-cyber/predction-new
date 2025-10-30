@@ -106,7 +106,19 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 
   // Save addresses
   const network = await ethers.provider.getNetwork();
+  const addressesPath = path.join(__dirname, "..", "addresses.json");
+
+  let existing: Record<string, any> = {};
+  if (fs.existsSync(addressesPath)) {
+    try {
+      existing = JSON.parse(fs.readFileSync(addressesPath, "utf8"));
+    } catch (error) {
+      console.warn("⚠️  Failed to parse existing addresses.json, overwriting with fresh data");
+    }
+  }
+
   const addresses = {
+    ...existing,
     network: hre.network.name,
     chainId: network.chainId.toString(),
     usdc: usdc.address,
@@ -119,7 +131,6 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     deployer: deployer,
   };
 
-  const addressesPath = path.join(__dirname, "..", "addresses.json");
   fs.writeFileSync(addressesPath, JSON.stringify(addresses, null, 2));
 
   console.log("\n================================================");

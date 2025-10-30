@@ -1,0 +1,51 @@
+# PredictX Backend Services - Production Docker Image
+# Build from project root: docker build -f services/Dockerfile.production -t predictx-backend .
+
+FROM node:20-alpine
+
+# Install wget for healthcheck
+RUN apk add --no-cache wget
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first (better caching)
+COPY services/package.json ./
+COPY services/tsconfig.json ./
+
+# Copy source code
+COPY services/runner.ts ./
+COPY services/relayer ./relayer
+COPY services/matcher ./matcher
+COPY services/api ./api
+COPY services/market-manager ./market-manager
+COPY services/utils ./utils
+
+# Create chain directory and copy artifacts
+RUN mkdir -p /app/chain/artifacts/contracts/core
+COPY chain/artifacts/contracts/core/ /app/chain/artifacts/contracts/core/
+COPY chain/addresses.json /app/chain/addresses.json
+
+# Copy test-markets.json if exists, otherwise create empty array
+COPY chain/test-markets.json /app/chain/test-markets.json
+
+# Install dependencies (services uses npm, not pnpm workspace)
+RUN npm install
+
+# Expose API port
+EXPOSE 8080
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+  CMD wget --quiet --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Set environment defaults
+ENV NODE_ENV=production \
+    API_PORT=8080 \
+    BATCH_SIZE=10 \
+    BATCH_DELAY_MS=2000 \
+    MAX_GAS_PRICE=100 \
+    MAX_RETRIES=3
+
+# Start the unified runner
+CMD ["npm", "start"]

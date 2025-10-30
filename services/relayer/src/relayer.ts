@@ -2,6 +2,7 @@ import { ethers } from "ethers";
 import { Fill, RelayerConfig, SubmissionResult } from "./types";
 import * as fs from "fs";
 import * as path from "path";
+import { retryTransaction } from "../../utils/retry";
 
 /**
  * Relayer - Submits matched orders to blockchain
@@ -28,7 +29,11 @@ export class Relayer {
     totalFills: 0,
     totalGasUsed: 0n,
     failedSubmissions: 0,
+    permanentlyFailedFills: 0, // 不可重试的失败
   };
+
+  // Callbacks for fill status
+  private onFillRejected?: (fill: Fill, reason: string) => void;
 
   constructor(config: RelayerConfig) {
     this.config = config;
@@ -51,16 +56,27 @@ export class Relayer {
   }
 
   /**
+   * Set callback for rejected fills (non-retryable errors)
+   */
+  setOnFillRejected(callback: (fill: Fill, reason: string) => void): void {
+    this.onFillRejected = callback;
+  }
+
+  /**
    * Load Settlement V2 ABI from compiled artifacts
    */
   private loadSettlementABI(): any[] {
-    const artifactPath = path.join(
-      __dirname,
-      "../../../chain/artifacts/contracts/core/SettlementV2.sol/SettlementV2.json"
-    );
+    // Try multiple paths (local, Docker relative, Docker absolute)
+    const paths = [
+      path.join(__dirname, "../../../chain/artifacts/contracts/core/SettlementV2.sol/SettlementV2.json"),
+      path.join(__dirname, "../chain/artifacts/contracts/core/SettlementV2.sol/SettlementV2.json"),
+      "/app/chain/artifacts/contracts/core/SettlementV2.sol/SettlementV2.json"
+    ];
 
-    if (!fs.existsSync(artifactPath)) {
-      throw new Error("SettlementV2 artifact not found. Run 'pnpm build' in chain directory.");
+    let artifactPath = paths.find(p => fs.existsSync(p));
+
+    if (!artifactPath) {
+      throw new Error(`SettlementV2 artifact not found. Tried: ${paths.join(", ")}`);
     }
 
     const artifact = JSON.parse(fs.readFileSync(artifactPath, "utf8"));
@@ -132,7 +148,7 @@ export class Relayer {
     }));
 
     // Submit with retries
-    const result = await this.submitWithRetry(fillStructs);
+    const result = await this.submitWithRetry(fillStructs, batch);
 
     if (result.success) {
       console.log(`✅ Batch submitted successfully`);
@@ -146,8 +162,21 @@ export class Relayer {
       console.error(`❌ Batch submission failed: ${result.error}`);
       this.stats.failedSubmissions++;
 
-      // Re-queue failed fills
-      this.pendingFills.unshift(...batch);
+      // 区分可重试和不可重试的错误
+      if (result.retryable) {
+        console.warn(`⚠️ 错误可重试，重新入队 ${batch.length} 个订单`);
+        this.pendingFills.unshift(...batch);
+      } else {
+        console.error(`🚫 错误不可重试，丢弃 ${batch.length} 个订单: ${result.error}`);
+        this.stats.permanentlyFailedFills += batch.length;
+
+        // 回调通知每个订单永久失败
+        if (this.onFillRejected) {
+          for (const fill of batch) {
+            this.onFillRejected(fill, result.error || "Unknown error");
+          }
+        }
+      }
     }
 
     console.log(`========================\n`);
@@ -165,11 +194,15 @@ export class Relayer {
    */
   private async submitWithRetry(
     fills: any[],
+    originalFills: Fill[],
     attempt = 1
   ): Promise<SubmissionResult> {
     try {
-      // Check gas price
-      const feeData = await this.provider.getFeeData();
+      // Check gas price（带重试）
+      const feeData = await retryTransaction(
+        () => this.provider.getFeeData(),
+        { maxRetries: 3, delayMs: 1000, backoff: true }
+      );
       const gasPrice = feeData.gasPrice || 0n;
       const maxGasPrice = ethers.parseUnits(this.config.maxGasPrice, "gwei");
 
@@ -180,21 +213,27 @@ export class Relayer {
         return {
           success: false,
           error: "Gas price too high",
+          retryable: true, // Gas price might drop
         };
       }
 
       console.log(`Gas price: ${ethers.formatUnits(gasPrice, "gwei")} gwei`);
 
-      // Estimate gas
+      // Estimate gas（带重试）
       let gasLimit: bigint;
       try {
-        gasLimit = await this.settlement.batchFill.estimateGas(fills);
+        gasLimit = await retryTransaction(
+          () => this.settlement.batchFill.estimateGas(fills),
+          { maxRetries: 3, delayMs: 1000, backoff: true }
+        );
         console.log(`Estimated gas: ${gasLimit.toString()}`);
       } catch (error: any) {
         console.error("Gas estimation failed:", error.message);
+        const retryable = this.isRetryableError(error);
         return {
           success: false,
           error: `Gas estimation failed: ${error.message}`,
+          retryable,
         };
       }
 
@@ -215,6 +254,7 @@ export class Relayer {
         txHash: receipt.hash,
         gasUsed: receipt.gasUsed,
         fillCount: fills.length,
+        retryable: false,
       };
     } catch (error: any) {
       console.error(`Submission attempt ${attempt} failed:`, error.message);
@@ -226,50 +266,87 @@ export class Relayer {
         const delay = Math.min(1000 * Math.pow(2, attempt - 1), 30000);
         console.log(`Retrying in ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
-        return this.submitWithRetry(fills, attempt + 1);
+        return this.submitWithRetry(fills, originalFills, attempt + 1);
       }
 
       return {
         success: false,
         error: error.message,
+        retryable: retryable && attempt >= this.config.maxRetries, // Retryable but exhausted retries
       };
     }
   }
 
   /**
    * Check if error is retryable
+   *
+   * 不可重试错误（会导致僵尸订单）：
+   * - invalid signature: 签名无效
+   * - expired / order expired: 订单过期
+   * - insufficient balance / insufficient collateral: 余额不足
+   * - overfill: 订单已完全成交
+   * - invalid nonce: nonce 无效（用户已取消）
+   * - unauthorized: 未授权的 taker
    */
   private isRetryableError(error: any): boolean {
     const message = error.message.toLowerCase();
 
-    // Network errors
-    if (
-      message.includes("network") ||
-      message.includes("timeout") ||
-      message.includes("connection")
-    ) {
+    // 明确的不可重试错误（黑名单）
+    const nonRetryablePatterns = [
+      "invalid signature",
+      "order expired",
+      "expired",
+      "insufficient balance",
+      "insufficient collateral",
+      "overfill",
+      "invalid nonce",
+      "unauthorized taker",
+      "unauthorized",
+      "unsupported collateral",
+      "invalid outcome",
+      "invalid amount",
+    ];
+
+    for (const pattern of nonRetryablePatterns) {
+      if (message.includes(pattern)) {
+        console.log(`🚫 Non-retryable error detected: ${pattern}`);
+        return false;
+      }
+    }
+
+    // 可重试的网络错误
+    const retryablePatterns = [
+      "network",
+      "timeout",
+      "connection",
+      "econnrefused",
+      "enotfound",
+      "503", // Service unavailable
+      "502", // Bad gateway
+      "429", // Rate limit
+    ];
+
+    for (const pattern of retryablePatterns) {
+      if (message.includes(pattern)) {
+        console.log(`⚠️ Retryable network error detected: ${pattern}`);
+        return true;
+      }
+    }
+
+    // Nonce errors - 可能是并发问题，可重试
+    if (message.includes("nonce too low") || message.includes("replacement")) {
+      console.log(`⚠️ Retryable nonce error detected`);
       return true;
     }
 
-    // Nonce errors
-    if (message.includes("nonce")) {
+    // Gas errors - 可能暂时性，可重试
+    if (message.includes("gas") && !message.includes("out of gas")) {
+      console.log(`⚠️ Retryable gas error detected`);
       return true;
     }
 
-    // Gas errors (might resolve with different gas price)
-    if (message.includes("gas")) {
-      return true;
-    }
-
-    // Don't retry validation errors
-    if (
-      message.includes("invalid signature") ||
-      message.includes("expired") ||
-      message.includes("insufficient")
-    ) {
-      return false;
-    }
-
+    // 默认不重试未知错误，避免僵尸订单
+    console.log(`🚫 Unknown error, treating as non-retryable`);
     return false;
   }
 
@@ -288,6 +365,7 @@ export class Relayer {
         this.stats.totalSubmitted > 0
           ? this.stats.totalFills / this.stats.totalSubmitted
           : 0,
+      permanentlyFailedFills: this.stats.permanentlyFailedFills,
     };
   }
 
@@ -365,11 +443,12 @@ async function main() {
   // Stats logging
   setInterval(() => {
     const stats = relayer.getStats();
-    if (stats.totalSubmitted > 0 || stats.pendingFills > 0) {
+    if (stats.totalSubmitted > 0 || stats.pendingFills > 0 || stats.permanentlyFailedFills > 0) {
       console.log("\n=== Relayer Statistics ===");
       console.log(`Total Submissions: ${stats.totalSubmitted}`);
       console.log(`Total Fills: ${stats.totalFills}`);
       console.log(`Failed Submissions: ${stats.failedSubmissions}`);
+      console.log(`Permanently Failed: ${stats.permanentlyFailedFills}`);
       console.log(`Pending Fills: ${stats.pendingFills}`);
       console.log(`Avg Gas Per Submission: ${stats.averageGasPerSubmission.toString()}`);
       console.log(`Avg Fills Per Batch: ${stats.averageFillsPerBatch.toFixed(2)}`);
@@ -398,5 +477,3 @@ async function main() {
 if (require.main === module) {
   main().catch(console.error);
 }
-
-export { Relayer };

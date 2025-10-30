@@ -1,274 +1,150 @@
-import { useState, useEffect } from 'react'
-import { ethers } from 'ethers'
-
-const API_URL = 'http://localhost:8080'
-const RPC_URL = 'https://rpc-testnet.socrateschain.org'
-const CHAIN_ID = 1111111
+import { useState } from 'react';
+import AccountPanel from './components/AccountPanel';
+import MarketList from './components/MarketList';
+import OrderBook from './components/OrderBook';
+import TradeForm from './components/TradeForm';
+import MyOrders from './components/MyOrders';
+import MarketCreator from './components/MarketCreator';
+import StatsPanel from './components/StatsPanel';
+import PositionPanel from './components/PositionPanel';
+import RedemptionPanel from './components/RedemptionPanel';
 
 interface Market {
-  marketId: string
-  timeframe: number
-  startTime: number
-  endTime: number
-  status: string
+  id: string;
+  conditionId: string;
+  startTime: number;
+  endTime: number;
+  resolved: boolean;
+  winningOutcome: number | null;
+  collateral: string;
+  oracle: string;
+  kind: number;
+  timeframe: number;
 }
 
-interface Order {
-  id: string
-  side: 'BUY' | 'SELL'
-  price: number
-  amount: number
+interface LocalOrder {
+  orderId: string;
+  marketId: string;
+  outcome: number;
+  side: 'buy' | 'sell';
+  pricePips: string;
+  amount: string;
+  timestamp: number;
 }
 
 function App() {
-  const [provider, setProvider] = useState<ethers.BrowserProvider | null>(null)
-  const [account, setAccount] = useState<string>('')
-  const [markets, setMarkets] = useState<Market[]>([])
-  const [selectedMarket, setSelectedMarket] = useState<string | null>(null)
-  const [orderBook, setOrderBook] = useState<{ bids: Order[]; asks: Order[] }>({ bids: [], asks: [] })
+  const [selectedAccount, setSelectedAccount] = useState<{ label: string; address: string; privateKey: string } | null>(null);
+  const [selectedMarket, setSelectedMarket] = useState<Market | null>(null);
+  const [selectedOutcome, setSelectedOutcome] = useState<number>(1);
+  const [myOrders, setMyOrders] = useState<LocalOrder[]>([]);
 
-  useEffect(() => {
-    loadMarkets()
-    const interval = setInterval(loadMarkets, 5000)
-    return () => clearInterval(interval)
-  }, [])
+  const handleOrderSubmitted = (orderId: string) => {
+    // This callback receives orderId from TradeForm
+    // We don't store full order details in LocalOrder anymore
+    console.log('Order submitted:', orderId);
+  };
 
-  useEffect(() => {
-    if (selectedMarket) {
-      loadOrderBook(selectedMarket, 1)
-    }
-  }, [selectedMarket])
-
-  const loadMarkets = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/markets`)
-      const data = await response.json()
-      setMarkets(data.markets)
-    } catch (error) {
-      console.error('Failed to load markets:', error)
-    }
-  }
-
-  const loadOrderBook = async (marketId: string, outcome: number) => {
-    try {
-      const response = await fetch(`${API_URL}/api/orderbook/${marketId}/${outcome}`)
-      const data = await response.json()
-      setOrderBook(data)
-    } catch (error) {
-      console.error('Failed to load order book:', error)
-    }
-  }
-
-  const connectWallet = async () => {
-    if (typeof window.ethereum !== 'undefined') {
-      try {
-        const browserProvider = new ethers.BrowserProvider(window.ethereum)
-        await browserProvider.send('eth_requestAccounts', [])
-
-        // Check network
-        const network = await browserProvider.getNetwork()
-        if (network.chainId !== BigInt(CHAIN_ID)) {
-          try {
-            await window.ethereum.request({
-              method: 'wallet_switchEthereumChain',
-              params: [{ chainId: `0x${CHAIN_ID.toString(16)}` }],
-            })
-          } catch (error: any) {
-            if (error.code === 4902) {
-              await window.ethereum.request({
-                method: 'wallet_addEthereumChain',
-                params: [{
-                  chainId: `0x${CHAIN_ID.toString(16)}`,
-                  chainName: 'Socrates Testnet',
-                  rpcUrls: [RPC_URL],
-                }],
-              })
-            }
-          }
-        }
-
-        const signer = await browserProvider.getSigner()
-        const address = await signer.getAddress()
-        setProvider(browserProvider)
-        setAccount(address)
-      } catch (error) {
-        console.error('Failed to connect wallet:', error)
-      }
-    } else {
-      alert('Please install MetaMask!')
-    }
-  }
-
-  const submitOrder = async (side: 'BUY' | 'SELL', price: number, amount: number) => {
-    if (!selectedMarket) return
-
-    try {
-      const response = await fetch(`${API_URL}/api/orders`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          marketId: selectedMarket,
-          outcome: 1,
-          side,
-          price,
-          amount,
-          maker: account,
-        }),
-      })
-
-      const data = await response.json()
-      alert(`Order ${data.orderId} submitted!`)
-      loadOrderBook(selectedMarket, 1)
-    } catch (error) {
-      console.error('Failed to submit order:', error)
-    }
-  }
+  const handleRemoveOrder = (orderId: string) => {
+    setMyOrders(myOrders.filter((o) => o.orderId !== orderId));
+  };
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <h1>🎯 PredictX - BTC Price Prediction Market</h1>
+    <div style={{ fontFamily: 'Arial, sans-serif', backgroundColor: '#f5f5f5', minHeight: '100vh', padding: '20px' }}>
+      <header style={{ backgroundColor: '#2196F3', color: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
+        <h1 style={{ margin: 0, fontSize: '32px' }}>PredictX - BTC Prediction Market MVP</h1>
+        <p style={{ margin: '5px 0 0 0', opacity: 0.9 }}>
+          Trade on BTC price movements | Testnet Only
+        </p>
+      </header>
 
-      <div style={{ marginBottom: '20px' }}>
-        {account ? (
-          <div>Connected: {account.slice(0, 6)}...{account.slice(-4)}</div>
-        ) : (
-          <button onClick={connectWallet} style={{ padding: '10px 20px', fontSize: '16px' }}>
-            Connect Wallet
-          </button>
-        )}
+      <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr 350px', gap: '20px', marginBottom: '20px' }}>
+        <div>
+          <AccountPanel selectedAccount={selectedAccount} onAccountChange={setSelectedAccount} />
+          <div style={{ marginTop: '20px' }}>
+            <MarketCreator />
+          </div>
+        </div>
+
+        <div>
+          <MarketList selectedMarket={selectedMarket} onSelectMarket={setSelectedMarket} />
+
+          {selectedMarket && (
+            <div style={{ marginTop: '20px' }}>
+              <div style={{ marginBottom: '15px', textAlign: 'center' }}>
+                <div style={{ display: 'inline-flex', borderRadius: '8px', overflow: 'hidden', border: '1px solid #ddd' }}>
+                  <button
+                    onClick={() => setSelectedOutcome(0)}
+                    style={{
+                      padding: '12px 24px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      backgroundColor: selectedOutcome === 0 ? '#f44336' : 'white',
+                      color: selectedOutcome === 0 ? 'white' : '#f44336',
+                      border: 'none',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    DOWN
+                  </button>
+                  <button
+                    onClick={() => setSelectedOutcome(1)}
+                    style={{
+                      padding: '12px 24px',
+                      fontSize: '16px',
+                      fontWeight: 'bold',
+                      backgroundColor: selectedOutcome === 1 ? '#4CAF50' : 'white',
+                      color: selectedOutcome === 1 ? 'white' : '#4CAF50',
+                      border: 'none',
+                      borderLeft: '1px solid #ddd',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    UP
+                  </button>
+                </div>
+              </div>
+
+              <OrderBook marketId={selectedMarket.id} outcome={selectedOutcome} />
+
+              <div style={{ marginTop: '20px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <TradeForm
+                  market={selectedMarket}
+                  account={selectedAccount}
+                  outcome={selectedOutcome}
+                  side="buy"
+                  onOrderSubmitted={handleOrderSubmitted}
+                />
+                <TradeForm
+                  market={selectedMarket}
+                  account={selectedAccount}
+                  outcome={selectedOutcome}
+                  side="sell"
+                  onOrderSubmitted={handleOrderSubmitted}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <StatsPanel />
+          <div style={{ marginTop: '20px' }}>
+            <RedemptionPanel account={selectedAccount} />
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <PositionPanel account={selectedAccount} />
+          </div>
+          <div style={{ marginTop: '20px' }}>
+            <MyOrders orders={myOrders} onRemoveOrder={handleRemoveOrder} />
+          </div>
+        </div>
       </div>
 
-      <h2>Markets</h2>
-      <div style={{ display: 'grid', gap: '10px', marginBottom: '30px' }}>
-        {markets.map(market => (
-          <div
-            key={market.marketId}
-            onClick={() => setSelectedMarket(market.marketId)}
-            style={{
-              padding: '15px',
-              border: selectedMarket === market.marketId ? '2px solid blue' : '1px solid #ccc',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              backgroundColor: selectedMarket === market.marketId ? '#f0f8ff' : 'white'
-            }}
-          >
-            <div style={{ fontWeight: 'bold' }}>Market #{market.marketId} - {market.timeframe}m</div>
-            <div>Status: <span style={{
-              color: market.status === 'active' ? 'green' : market.status === 'pending' ? 'orange' : 'gray'
-            }}>{market.status}</span></div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              Start: {new Date(market.startTime * 1000).toLocaleString()}
-            </div>
-            <div style={{ fontSize: '12px', color: '#666' }}>
-              End: {new Date(market.endTime * 1000).toLocaleString()}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {selectedMarket && (
-        <>
-          <h2>Order Book - Market #{selectedMarket} (UP Outcome)</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '30px' }}>
-            <div>
-              <h3 style={{ color: 'green' }}>Bids (Buy)</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Price</th>
-                    <th style={{ textAlign: 'right', padding: '8px', borderBottom: '1px solid #ddd' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderBook.bids.map(order => (
-                    <tr key={order.id}>
-                      <td style={{ padding: '8px', color: 'green' }}>${order.price}</td>
-                      <td style={{ padding: '8px', textAlign: 'right' }}>{order.amount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div>
-              <h3 style={{ color: 'red' }}>Asks (Sell)</h3>
-              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th style={{ textAlign: 'left', padding: '8px', borderBottom: '1px solid #ddd' }}>Price</th>
-                    <th style={{ textAlign: 'right', padding: '8px', borderBottom: '1px solid #ddd' }}>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orderBook.asks.map(order => (
-                    <tr key={order.id}>
-                      <td style={{ padding: '8px', color: 'red' }}>${order.price}</td>
-                      <td style={{ padding: '8px', textAlign: 'right' }}>{order.amount}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <h2>Place Order</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-            <OrderForm side="BUY" onSubmit={submitOrder} />
-            <OrderForm side="SELL" onSubmit={submitOrder} />
-          </div>
-        </>
-      )}
+      <footer style={{ textAlign: 'center', color: '#999', fontSize: '12px', marginTop: '40px' }}>
+        PredictX MVP | Socrates Testnet | For Testing Only
+      </footer>
     </div>
-  )
+  );
 }
 
-function OrderForm({ side, onSubmit }: { side: 'BUY' | 'SELL'; onSubmit: (side: 'BUY' | 'SELL', price: number, amount: number) => void }) {
-  const [price, setPrice] = useState('0.5')
-  const [amount, setAmount] = useState('100')
-
-  return (
-    <div style={{
-      padding: '20px',
-      border: `2px solid ${side === 'BUY' ? 'green' : 'red'}`,
-      borderRadius: '8px'
-    }}>
-      <h3 style={{ color: side === 'BUY' ? 'green' : 'red' }}>{side}</h3>
-      <div style={{ marginBottom: '10px' }}>
-        <label>Price: </label>
-        <input
-          type="number"
-          value={price}
-          onChange={e => setPrice(e.target.value)}
-          step="0.01"
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-        />
-      </div>
-      <div style={{ marginBottom: '10px' }}>
-        <label>Amount: </label>
-        <input
-          type="number"
-          value={amount}
-          onChange={e => setAmount(e.target.value)}
-          style={{ width: '100%', padding: '8px', marginTop: '5px' }}
-        />
-      </div>
-      <button
-        onClick={() => onSubmit(side, parseFloat(price), parseFloat(amount))}
-        style={{
-          width: '100%',
-          padding: '12px',
-          fontSize: '16px',
-          backgroundColor: side === 'BUY' ? 'green' : 'red',
-          color: 'white',
-          border: 'none',
-          borderRadius: '4px',
-          cursor: 'pointer'
-        }}
-      >
-        Place {side} Order
-      </button>
-    </div>
-  )
-}
-
-export default App
+export default App;

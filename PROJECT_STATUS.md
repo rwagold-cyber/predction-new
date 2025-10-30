@@ -68,17 +68,14 @@ predictx/
 │   ├── scripts/checkBalance.ts          # 检查余额
 │   └── hardhat.config.ts                # Hardhat 配置
 │
-├── 🔧 后端服务 (3)
-│   ├── services/api/
-│   │   ├── src/server.ts                # REST API 服务
-│   │   └── README.md                    # API 文档
-│   ├── services/matcher/
-│   │   ├── src/matcher.ts               # 撮合引擎
-│   │   ├── src/orderbook.ts             # 订单簿（价格-时间优先）
-│   │   └── src/signature.ts             # EIP-712 验证
-│   └── services/relayer/
-│       ├── src/relayer.ts               # 批量提交服务
-│       └── src/types.ts                 # 类型定义
+├── 🔧 后端服务
+│   ├── services/api/            # REST API（订单/市场/统计/取消）
+│   ├── services/matcher/        # 撮合引擎 (1 秒循环)
+│   ├── services/relayer/        # 批量链上提交 + 自动重试
+│   ├── services/market-manager/ # 市场监听与自动解析
+│   ├── services/utils/retry.ts  # RPC 重试工具
+│   ├── services/runner.ts       # 统一服务启动与监控
+│   └── services/PRODUCTION_READINESS_CHECKLIST.md
 │
 └── 🌐 前端应用 (3)
     └── apps/web/
@@ -129,28 +126,35 @@ predictx/
 
 ### 后端服务 V2
 
-- [x] **REST API Service**
-  - [x] 订单提交 (POST /api/v1/orders)
-  - [x] 订单状态查询 (GET /api/v1/orders/:orderId)
-  - [x] 订单簿查询 (GET /api/v1/orderbook/:marketId/:outcome)
-  - [x] 统计信息 (GET /api/v1/stats)
+- [x] **REST API Server**
+  - [x] 订单提交/查询/取消
+  - [x] 市场列表、未解析市场、统计汇总
+  - [x] 订单簿与 Matcher 统计
   - [x] 健康检查 (GET /health)
-  - [x] 完整 API 文档 (services/api/README.md)
+  - [x] 文档：`API_REFERENCE.md`
 
 - [x] **Matching Engine（撮合引擎）**
   - [x] 价格-时间优先订单簿
+  - [x] 每秒自动撮合
+  - [x] 部分成交 & 订单状态追踪
   - [x] EIP-712 签名验证
-  - [x] 自动撮合（每 5 秒）
-  - [x] 部分成交支持
-  - [x] 订单状态追踪
-  - [x] 精度：BPS 价格 + USDC 6 位小数
 
 - [x] **Relayer（中继服务）**
-  - [x] 批量提交优化（默认 10 笔/批）
-  - [x] Gas 价格监控
-  - [x] 自动重试机制
-  - [x] 队列管理
-  - [x] 统计和监控
+  - [x] 批量提交（默认 10 笔/批）
+  - [x] Gas 价格监控 + 指数退避重试
+  - [x] 不可重试错误识别 & 撮合回调清理
+  - [x] 统计指标（`permanentlyFailedFills` 等）
+
+- [x] **MarketManager**
+  - [x] 监听 `MarketCreated` 事件
+  - [x] 5 分钟扫描兜底
+  - [x] 自动调用 `resolveMarket`
+  - [x] 市场统计输出
+
+- [x] **Runner & 工具**
+  - [x] 统一启动/优雅关闭
+  - [x] 30 秒周期日志监控
+  - [x] `services/utils/retry.ts` 提供 RPC 重试封装
 
 ### 前端应用
 
@@ -234,50 +238,44 @@ predictx/
 
 ## ⚠️ 简化实现说明
 
-以下功能为 MVP 简化版本，生产环境需要增强：
+以下功能仍处于 MVP 状态，生产环境建议加强：
 
-1. **订单存储**:
-   - 当前: 内存存储
-   - 建议: PostgreSQL + Redis
+1. **订单 & 市场数据持久化**
+   - 当前：内存存储
+   - 建议：PostgreSQL + Redis（订单簿快照 / 历史成交）
 
-2. **撮合引擎**:
-   - 当前: 简单匹配
-   - 建议: 专业撮合算法
+2. **实时推送**
+   - 当前：REST 轮询
+   - 建议：WebSocket/SSE 推送订单簿、市场解析事件
 
-3. **Relayer**:
-   - 当前: 手动触发
-   - 建议: 自动化批量结算
+3. **授权方式**
+   - 当前：ERC20 `approve`
+  - 建议：Permit2 或账户抽象签名流程
 
-4. **授权方式**:
-   - 当前: ERC20 approve
-   - 建议: Uniswap Permit2
+4. **测试体系**
+   - 当前：脚本+少量手测
+   - 建议：补充单元测试、端到端、长时间稳定性测试
 
-5. **实时通信**:
-   - 当前: HTTP 轮询
-   - 建议: WebSocket 推送
+5. **监控告警**
+   - 当前：日志+手动观察
+   - 建议：Prometheus/Grafana、告警渠道、日志聚合
+
+6. **安全审计**
+   - 当前：内部审阅
+   - 建议：生产上线前进行第三方审计
 
 ## 🔜 后续改进建议
 
 ### 高优先级
 
-1. [ ] 数据持久化（PostgreSQL）
-2. [ ] Permit2 集成
-3. [ ] 批量结算优化
-4. [ ] 完整测试覆盖
-5. [ ] 错误处理增强
-
-### 中优先级
-
-6. [ ] WebSocket 实时推送
-7. [ ] 专业撮合引擎
-8. [ ] 监控和告警
-9. [ ] 合约审计
-10. [ ] API 文档
-
-### 低优先级
-
-11. [ ] P2P 订单广播
-12. [ ] 多链支持
+1. [ ] 订单 / 市场数据持久化（PostgreSQL + Redis）
+2. [ ] WebSocket/SSE 推送
+3. [ ] Permit2 & 高级授权
+4. [ ] 完整自动化测试体系
+5. [ ] 监控与告警（Prometheus/Grafana）
+6. [ ] 专业合约/后端安全审计
+7. [ ] 高级撮合策略 / 净额优化
+8. [ ] P2P 订单广播、跨链扩展（中长期）
 13. [ ] 移动端应用
 14. [ ] 更多市场类型
 
@@ -309,17 +307,17 @@ cp .env.example .env
 pnpm install
 pnpm start
 
-# API 服务启动在 http://localhost:3000
+# API 服务启动在 http://localhost:8080 （可通过 API_PORT 调整）
 ```
 
 ### 测试 API
 
 ```bash
 # 健康检查
-curl http://localhost:3000/health
+curl http://localhost:8080/health
 
 # 查看统计
-curl http://localhost:3000/api/v1/stats
+curl http://localhost:8080/api/v1/stats
 ```
 
 ### 分步部署
