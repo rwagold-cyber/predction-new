@@ -1,17 +1,17 @@
-# Smart Contracts Documentation
+# 智能合约文档
 
-This document describes the smart contract architecture, interfaces, and mechanics of the PredictX prediction market platform.
+本文档详细介绍 PredictX 预测市场平台的智能合约架构、接口和机制。
 
-## Architecture Overview
+## 架构总览
 
-The PredictX V2 platform consists of four main smart contracts:
+PredictX V2 平台包含四个主要智能合约：
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      Smart Contracts                          │
+│                       智能合约层                              │
 │  ┌──────────────┐    ┌─────────────┐    ┌─────────────────┐  │
 │  │ SettlementV2 │◀──▶│     CTF     │◀──▶│ MarketRegistry  │  │
-│  │  (Trading)   │    │ (Positions) │    │   V2 (Markets)  │  │
+│  │   (交易)     │    │   (仓位)    │    │  V2 (市场)      │  │
 │  └──────────────┘    └─────────────┘    └────────┬────────┘  │
 │                                                    │           │
 │                                          ┌─────────▼────────┐ │
@@ -25,11 +25,11 @@ The PredictX V2 platform consists of four main smart contracts:
 
 ## ConditionalTokensV2 (CTF)
 
-**Location**: `chain/contracts/ConditionalTokensV2.sol`
+**位置**: `chain/contracts/ConditionalTokensV2.sol`
 
-The ConditionalTokensV2 contract is an ERC1155-based implementation that manages outcome tokens for prediction markets. It is the core component that enables zero-sum conditional token mechanics.
+ConditionalTokensV2 合约是基于 ERC1155 的实现，管理预测市场的结果代币。它是实现零和博弈条件代币机制的核心组件。
 
-### Core Functions
+### 核心函数
 
 #### prepareCondition
 ```solidity
@@ -40,16 +40,16 @@ function prepareCondition(
 ) external
 ```
 
-Prepares a new condition (market outcome set) for trading.
+为交易准备新的条件（市场结果集）。
 
-**Parameters**:
-- `oracle`: Address authorized to report the result (MarketRegistryV2)
-- `questionId`: Unique identifier for the condition
-- `outcomeSlotCount`: Number of possible outcomes (always 2 for UP/DOWN markets)
+**参数**:
+- `oracle`: 授权报告结果的地址（MarketRegistryV2）
+- `questionId`: 条件的唯一标识符
+- `outcomeSlotCount`: 可能的结果数量（UP/DOWN 市场始终为 2）
 
-**Returns**: `conditionId` (bytes32) - Unique identifier for this condition
+**返回值**: `conditionId` (bytes32) - 此条件的唯一标识符
 
-**Usage**: Called automatically by `MarketRegistryV2.createMarket()`
+**使用场景**: 由 `MarketRegistryV2.createMarket()` 自动调用
 
 ---
 
@@ -62,22 +62,22 @@ function splitPosition(
 ) external
 ```
 
-Splits collateral into a complete set of outcome tokens.
+将抵押品分割成完整的结果代币集。
 
-**Parameters**:
-- `collateralToken`: Collateral token address (USDC)
-- `conditionId`: Condition to split into
-- `amount`: Amount of collateral to split (6 decimals for USDC)
+**参数**:
+- `collateralToken`: 抵押代币地址（USDC）
+- `conditionId`: 要分割成的条件
+- `amount`: 要分割的抵押品数量（USDC 为 6 位小数）
 
-**Behavior**:
-- Transfers `amount` of collateral from user to CTF contract
-- Mints `amount` of each outcome token (DOWN and UP) to user
-- User receives complete set that can be merged back at any time
+**行为**:
+- 从用户转移 `amount` 数量的抵押品到 CTF 合约
+- 为用户铸造每种结果代币各 `amount` 数量（DOWN 和 UP）
+- 用户收到完整代币集，可随时合并回抵押品
 
-**Example**:
+**示例**:
 ```
-Input: 100 USDC
-Output: 100 DOWN tokens + 100 UP tokens
+输入：100 USDC
+输出：100 DOWN 代币 + 100 UP 代币
 ```
 
 ---
@@ -91,22 +91,22 @@ function mergePositions(
 ) external
 ```
 
-Merges a complete set of outcome tokens back into collateral.
+将完整的结果代币集合并回抵押品。
 
-**Parameters**:
-- `collateralToken`: Collateral token address (USDC)
-- `conditionId`: Condition to merge from
-- `amount`: Amount of complete set to merge
+**参数**:
+- `collateralToken`: 抵押代币地址（USDC）
+- `conditionId`: 要合并的条件
+- `amount`: 要合并的完整代币集数量
 
-**Behavior**:
-- Burns `amount` of each outcome token (DOWN and UP) from user
-- Transfers `amount` of collateral back to user
-- Must hold complete set (equal amounts of all outcomes)
+**行为**:
+- 销毁用户的每种结果代币各 `amount` 数量（DOWN 和 UP）
+- 转移 `amount` 数量的抵押品回用户
+- 必须持有完整代币集（所有结果的相等数量）
 
-**Example**:
+**示例**:
 ```
-Input: 100 DOWN tokens + 100 UP tokens
-Output: 100 USDC
+输入：100 DOWN 代币 + 100 UP 代币
+输出：100 USDC
 ```
 
 ---
@@ -119,18 +119,18 @@ function reportPayouts(
 ) external
 ```
 
-Reports the final result for a condition.
+报告条件的最终结果。
 
-**Parameters**:
-- `questionId`: Question to resolve
-- `payouts`: Payout vector (e.g., `[0, 1]` for UP wins, `[1, 0]` for DOWN wins)
+**参数**:
+- `questionId`: 要解析的问题
+- `payouts`: 支付向量（例如，`[0, 1]` 表示 UP 获胜，`[1, 0]` 表示 DOWN 获胜）
 
-**Access**: Only callable by the oracle address (MarketRegistryV2)
+**访问控制**: 仅可由预言机地址（MarketRegistryV2）调用
 
-**Behavior**:
-- Permanently records the payout vector for this condition
-- Enables users to redeem winning outcome tokens
-- Cannot be called twice for the same questionId
+**行为**:
+- 永久记录此条件的支付向量
+- 使用户能够赎回获胜的结果代币
+- 不能对同一 questionId 调用两次
 
 ---
 
@@ -143,30 +143,30 @@ function redeemPositions(
 ) external
 ```
 
-Redeems outcome tokens for collateral after condition is resolved.
+在条件解析后赎回结果代币以换取抵押品。
 
-**Parameters**:
-- `collateralToken`: Collateral token address
-- `conditionId`: Resolved condition
-- `indexSets`: Array of index sets to redeem (e.g., `[1]` for DOWN, `[2]` for UP)
+**参数**:
+- `collateralToken`: 抵押代币地址
+- `conditionId`: 已解析的条件
+- `indexSets`: 要赎回的索引集数组（例如，`[1]` 表示 DOWN，`[2]` 表示 UP）
 
-**Behavior**:
-- Calculates payout based on reported results
-- Burns outcome tokens
-- Transfers proportional collateral to user
+**行为**:
+- 根据报告的结果计算支付
+- 销毁结果代币
+- 转移按比例的抵押品给用户
 
-**Example** (UP wins with payout `[0, 1]`):
+**示例**（UP 获胜，支付 `[0, 1]`）:
 ```
-User holds: 100 UP tokens
-Redemption: Burns 100 UP, receives 100 USDC
+用户持有：100 UP 代币
+赎回：销毁 100 UP，收到 100 USDC
 
-User holds: 100 DOWN tokens
-Redemption: Burns 100 DOWN, receives 0 USDC
+用户持有：100 DOWN 代币
+赎回：销毁 100 DOWN，收到 0 USDC
 ```
 
 ---
 
-### Helper Functions
+### 辅助函数
 
 #### getConditionId
 ```solidity
@@ -177,9 +177,9 @@ function getConditionId(
 ) public pure returns (bytes32)
 ```
 
-Calculates the condition ID for given parameters.
+计算给定参数的条件 ID。
 
-**Returns**: `keccak256(abi.encodePacked(oracle, questionId, outcomeSlotCount))`
+**返回值**: `keccak256(abi.encodePacked(oracle, questionId, outcomeSlotCount))`
 
 ---
 
@@ -191,11 +191,11 @@ function getCollectionId(
 ) public pure returns (bytes32)
 ```
 
-Calculates collection ID for an outcome.
+计算某个结果的集合 ID。
 
-**Parameters**:
-- `conditionId`: Condition identifier
-- `indexSet`: Outcome index set (1 for outcome 0, 2 for outcome 1, 3 for complete set)
+**参数**:
+- `conditionId`: 条件标识符
+- `indexSet`: 结果索引集（1 表示结果 0，2 表示结果 1，3 表示完整集）
 
 ---
 
@@ -207,32 +207,32 @@ function getPositionId(
 ) public pure returns (uint256)
 ```
 
-Calculates the ERC1155 token ID for a position.
+计算仓位的 ERC1155 代币 ID。
 
-**Returns**: `uint256(keccak256(abi.encodePacked(collateralToken, collectionId)))`
+**返回值**: `uint256(keccak256(abi.encodePacked(collateralToken, collectionId)))`
 
-**Note**: This is the token ID used for `balanceOf()` and `safeTransferFrom()` calls.
+**注意**: 这是用于 `balanceOf()` 和 `safeTransferFrom()` 调用的代币 ID。
 
 ---
 
 ## SettlementV2
 
-**Location**: `chain/contracts/SettlementV2.sol`
+**位置**: `chain/contracts/SettlementV2.sol`
 
-The SettlementV2 contract handles order validation, signature verification, and trade execution.
+SettlementV2 合约处理订单验证、签名验证和交易执行。
 
-### Core Functions
+### 核心函数
 
 #### depositCollateral
 ```solidity
 function depositCollateral(address token, uint256 amount) external
 ```
 
-Deposits collateral into the Settlement contract for trading.
+将抵押品存入 Settlement 合约以进行交易。
 
-**Pre-requisite**: User must approve Settlement contract to spend USDC
+**前提条件**: 用户必须授权 Settlement 合约花费 USDC
 
-**Example**:
+**示例**:
 ```solidity
 await usdc.approve(settlementAddress, amount);
 await settlement.depositCollateral(usdcAddress, amount);
@@ -245,11 +245,11 @@ await settlement.depositCollateral(usdcAddress, amount);
 function withdrawCollateral(address token, uint256 amount) external
 ```
 
-Withdraws deposited collateral from the Settlement contract.
+从 Settlement 合约提取已存入的抵押品。
 
-**Requirements**:
-- User has sufficient deposited balance
-- Amount > 0
+**要求**:
+- 用户有足够的已存入余额
+- 数量 > 0
 
 ---
 
@@ -263,20 +263,20 @@ function fill(
 ) external
 ```
 
-Executes a single order fill (used internally by batchFill).
+执行单个订单填充（由 batchFill 内部使用）。
 
-**Parameters**:
-- `order`: Order structure (see OrderV2 below)
-- `signature`: EIP-712 signature from order maker
-- `fillAmount`: Amount to fill (6 decimals for USDC)
-- `taker`: Address of the taker
+**参数**:
+- `order`: 订单结构（见下文 OrderV2）
+- `signature`: 来自订单创建者的 EIP-712 签名
+- `fillAmount`: 要填充的数量（USDC 为 6 位小数）
+- `taker`: 接受者地址
 
-**Validations**:
-- Signature verification (EIP-712)
-- Order not expired
-- Order not overfilled
-- Sufficient balances
-- Valid nonce
+**验证**:
+- 签名验证（EIP-712）
+- 订单未过期
+- 订单未超额填充
+- 余额充足
+- Nonce 有效
 
 ---
 
@@ -285,54 +285,54 @@ Executes a single order fill (used internally by batchFill).
 function batchFill(Types.FillV2[] calldata fills) external
 ```
 
-Executes multiple order fills in a single transaction.
+在单笔交易中执行多个订单填充。
 
-**Parameters**:
-- `fills`: Array of fill structures
+**参数**:
+- `fills`: 填充结构数组
 
-**Behavior**:
-- Validates each order signature
-- Checks balances and nonces
-- If `mintOnFill = true`: Calls CTF.splitPosition() to mint outcome tokens
-- Transfers outcome tokens between maker and taker
-- Deducts fees
-- Updates filled amounts
-- Emits `OrderFilled` events
+**行为**:
+- 验证每个订单签名
+- 检查余额和 nonce
+- 如果 `mintOnFill = true`: 调用 CTF.splitPosition() 铸造结果代币
+- 在创建者和接受者之间转移结果代币
+- 扣除手续费
+- 更新已填充数量
+- 发出 `OrderFilled` 事件
 
-**Gas Optimization**: Batching reduces transaction overhead significantly
+**Gas 优化**: 批处理显著降低交易开销
 
 ---
 
-### OrderV2 Structure
+### OrderV2 结构
 
 ```solidity
 struct OrderV2 {
-    address maker;              // Order creator
-    string marketId;            // Market identifier
-    bytes32 conditionId;        // CTF condition ID
+    address maker;              // 订单创建者
+    string marketId;            // 市场标识符
+    bytes32 conditionId;        // CTF 条件 ID
     uint8 outcome;              // 0=DOWN, 1=UP
-    address collateral;         // Collateral token (USDC)
-    string pricePips;           // Price in BPS (0-10000, e.g., "5000" = 50%)
-    string amount;              // Order size in collateral units (6 decimals)
-    uint16 makerFeeBps;         // Maker fee in BPS (e.g., 30 = 0.3%)
-    uint16 takerFeeBps;         // Taker fee in BPS
-    uint256 expiry;             // Unix timestamp expiration
-    string salt;                // Random salt for uniqueness
-    uint256 nonce;              // Order nonce
-    bool mintOnFill;            // Whether to mint tokens on fill
-    address allowedTaker;       // Specific taker (0x0 = anyone)
-    uint256 chainId;            // Chain ID (1111111 for Socrates)
-    address verifyingContract;  // Settlement contract address
+    address collateral;         // 抵押代币（USDC）
+    string pricePips;           // BPS 价格（0-10000，例如 "5000" = 50%）
+    string amount;              // 订单大小（抵押品单位，6 位小数）
+    uint16 makerFeeBps;         // 创建者手续费 BPS（例如 30 = 0.3%）
+    uint16 takerFeeBps;         // 接受者手续费 BPS
+    uint256 expiry;             // Unix 时间戳过期时间
+    string salt;                // 唯一性随机盐
+    uint256 nonce;              // 订单 nonce
+    bool mintOnFill;            // 是否在填充时铸造代币
+    address allowedTaker;       // 特定接受者（0x0 = 任何人）
+    uint256 chainId;            // 链 ID（Socrates 为 1111111）
+    address verifyingContract;  // Settlement 合约地址
 }
 ```
 
 ---
 
-### EIP-712 Signing
+### EIP-712 签名
 
-Orders are signed using EIP-712 typed data:
+订单使用 EIP-712 类型化数据签名：
 
-**Domain**:
+**域**:
 ```typescript
 {
   name: "PredictXSettlementV2",
@@ -342,7 +342,7 @@ Orders are signed using EIP-712 typed data:
 }
 ```
 
-**Type Definition**:
+**类型定义**:
 ```typescript
 const ORDER_TYPES = {
   OrderV2: [
@@ -366,7 +366,7 @@ const ORDER_TYPES = {
 };
 ```
 
-**Frontend Signing Example**:
+**前端签名示例**:
 ```typescript
 const signature = await signer.signTypedData(domain, ORDER_TYPES, order);
 ```
@@ -375,11 +375,11 @@ const signature = await signer.signTypedData(domain, ORDER_TYPES, order);
 
 ## MarketRegistryV2
 
-**Location**: `chain/contracts/MarketRegistryV2.sol`
+**位置**: `chain/contracts/MarketRegistryV2.sol`
 
-The MarketRegistryV2 contract manages market creation and resolution.
+MarketRegistryV2 合约管理市场创建和解析。
 
-### Core Functions
+### 核心函数
 
 #### createMarket
 ```solidity
@@ -392,30 +392,30 @@ function createMarket(
 ) external onlyOwner returns (uint256 marketId, bytes32 conditionId)
 ```
 
-Creates a new prediction market.
+创建新的预测市场。
 
-**Parameters**:
-- `collateral`: Collateral token address (USDC)
-- `oracle`: Oracle adapter address (PythOracleAdapter)
-- `startTime`: Market start timestamp (must be minute-aligned: `timestamp % 60 == 0`)
-- `kind`: Market type (`BTC_UPDOWN = 0`, `ETH_UPDOWN = 1`)
-- `timeframe`: Duration in minutes (`1`, `3`, or `5`)
+**参数**:
+- `collateral`: 抵押代币地址（USDC）
+- `oracle`: 预言机适配器地址（PythOracleAdapter）
+- `startTime`: 市场开始时间戳（必须是整分钟对齐：`timestamp % 60 == 0`）
+- `kind`: 市场类型（`BTC_UPDOWN = 0`, `ETH_UPDOWN = 1`）
+- `timeframe`: 持续时间（分钟）（`1`、`3` 或 `5`）
 
-**Returns**:
-- `marketId`: Numeric market identifier
-- `conditionId`: CTF condition ID for this market
+**返回值**:
+- `marketId`: 数字市场标识符
+- `conditionId`: 此市场的 CTF 条件 ID
 
-**Behavior**:
-- Validates `startTime` is future and minute-aligned
-- Calculates `endTime = startTime + timeframe * 60`
-- Generates unique `questionId`
-- Calls `CTF.prepareCondition()`
-- Stores market metadata
-- Emits `MarketCreated` event
+**行为**:
+- 验证 `startTime` 是未来时间且整分钟对齐
+- 计算 `endTime = startTime + timeframe * 60`
+- 生成唯一的 `questionId`
+- 调用 `CTF.prepareCondition()`
+- 存储市场元数据
+- 发出 `MarketCreated` 事件
 
-**Example**:
+**示例**:
 ```solidity
-// Create a 5-minute BTC market starting at next minute
+// 创建一个在下一分钟开始的 5 分钟 BTC 市场
 uint256 nextMinute = ((block.timestamp / 60) + 1) * 60;
 (uint256 marketId, bytes32 conditionId) = registry.createMarket(
     usdcAddress,
@@ -433,27 +433,27 @@ uint256 nextMinute = ((block.timestamp / 60) + 1) * 60;
 function resolveMarket(uint256 marketId) external
 ```
 
-Resolves a market using oracle price data.
+使用预言机价格数据解析市场。
 
-**Requirements**:
-- Market must be ended: `block.timestamp >= market.endTime`
-- Resolve buffer elapsed: `block.timestamp >= market.endTime + resolveBuffer` (60s)
-- Market not already resolved
+**要求**:
+- 市场必须已结束：`block.timestamp >= market.endTime`
+- 解析缓冲期已过：`block.timestamp >= market.endTime + resolveBuffer`（60秒）
+- 市场尚未解析
 
-**Behavior**:
-1. Fetches start price from oracle at `market.startTime`
-2. Fetches end price from oracle at `market.endTime`
-3. Determines winning outcome: `endPrice > startPrice ? UP : DOWN`
-4. Calls `CTF.reportPayouts()` with payout vector
-5. Stores resolution data
-6. Emits `MarketResolved` event
+**行为**:
+1. 从预言机获取 `market.startTime` 的开始价格
+2. 从预言机获取 `market.endTime` 的结束价格
+3. 确定获胜结果：`endPrice > startPrice ? UP : DOWN`
+4. 用支付向量调用 `CTF.reportPayouts()`
+5. 存储解析数据
+6. 发出 `MarketResolved` 事件
 
-**Payout Logic**:
+**支付逻辑**:
 ```solidity
 if (endPrice > startPrice) {
-    payouts = [0, 1];  // UP wins
+    payouts = [0, 1];  // UP 获胜
 } else {
-    payouts = [1, 0];  // DOWN wins
+    payouts = [1, 0];  // DOWN 获胜
 }
 ```
 
@@ -464,21 +464,21 @@ if (endPrice > startPrice) {
 function getMarket(uint256 marketId) external view returns (Types.Market memory)
 ```
 
-Retrieves market information.
+检索市场信息。
 
-**Returns**: Market structure with:
-- `id`: Market ID
-- `collateral`: Collateral token address
-- `oracle`: Oracle address
-- `conditionId`: CTF condition ID
-- `startTime`: Market start timestamp
-- `endTime`: Market end timestamp
-- `kind`: Market type
-- `timeframe`: Duration in minutes
-- `resolved`: Resolution status
-- `winningOutcome`: Winning outcome (0=DOWN, 1=UP, only if resolved)
-- `startPrice`: Price at start (only if resolved)
-- `endPrice`: Price at end (only if resolved)
+**返回值**: 市场结构，包含：
+- `id`: 市场 ID
+- `collateral`: 抵押代币地址
+- `oracle`: 预言机地址
+- `conditionId`: CTF 条件 ID
+- `startTime`: 市场开始时间戳
+- `endTime`: 市场结束时间戳
+- `kind`: 市场类型
+- `timeframe`: 持续时间（分钟）
+- `resolved`: 解析状态
+- `winningOutcome`: 获胜结果（0=DOWN, 1=UP，仅在已解析时）
+- `startPrice`: 开始价格（仅在已解析时）
+- `endPrice`: 结束价格（仅在已解析时）
 
 ---
 
@@ -487,16 +487,16 @@ Retrieves market information.
 function canResolve(uint256 marketId) external view returns (bool)
 ```
 
-Checks if a market can be resolved.
+检查市场是否可以解析。
 
-**Returns**: `true` if:
-- Market exists
-- Market not already resolved
-- Current time >= endTime + resolveBuffer
+**返回值**: 如果以下条件都满足则为 `true`：
+- 市场存在
+- 市场尚未解析
+- 当前时间 >= endTime + resolveBuffer
 
 ---
 
-### Market Structure
+### Market 结构
 
 ```solidity
 struct Market {
@@ -519,31 +519,31 @@ struct Market {
 
 ## PythOracleAdapter
 
-**Location**: `chain/contracts/oracle/PythOracleAdapter.sol`
+**位置**: `chain/contracts/oracle/PythOracleAdapter.sol`
 
-The PythOracleAdapter provides minute-aligned historical price queries for BTC and ETH.
+PythOracleAdapter 为 BTC 和 ETH 提供整分钟对齐的历史价格查询。
 
-### Core Functions
+### 核心函数
 
 #### getPriceAt
 ```solidity
 function getPriceAt(uint64 minuteTs) external view returns (int256 price, bool valid)
 ```
 
-Retrieves historical price at a specific minute-aligned timestamp.
+检索特定整分钟时间戳的历史价格。
 
-**Parameters**:
-- `minuteTs`: Unix timestamp (must be minute-aligned: `minuteTs % 60 == 0`)
+**参数**:
+- `minuteTs`: Unix 时间戳（必须是整分钟对齐：`minuteTs % 60 == 0`）
 
-**Returns**:
-- `price`: Price with 8 decimals (e.g., `6500000000000` = $65,000)
-- `valid`: Whether the price data is valid
+**返回值**:
+- `price`: 8 位小数的价格（例如，`6500000000000` = $65,000）
+- `valid`: 价格数据是否有效
 
-**Requirements**:
-- `minuteTs` must be minute-aligned
-- Oracle must have price data for that timestamp
+**要求**:
+- `minuteTs` 必须是整分钟对齐
+- 预言机必须有该时间戳的价格数据
 
-**Internal**: Calls Pyth's `getPriceAtZeroTimestamp(feedId, minuteTs)`
+**内部实现**: 调用 Pyth 的 `getPriceAtZeroTimestamp(feedId, minuteTs)`
 
 ---
 
@@ -552,57 +552,57 @@ Retrieves historical price at a specific minute-aligned timestamp.
 function getLatestPrice() external view returns (int256 price, uint256 timestamp, bool valid)
 ```
 
-Retrieves the most recent price from Pyth Oracle.
+从 Pyth 预言机检索最新价格。
 
-**Returns**:
-- `price`: Current price
-- `timestamp`: Price timestamp
-- `valid`: Validity flag
+**返回值**:
+- `price`: 当前价格
+- `timestamp`: 价格时间戳
+- `valid`: 有效性标志
 
 ---
 
-### Pyth Oracle Integration
+### Pyth Oracle 集成
 
-The PythOracleAdapter integrates with Pyth Network's price feeds:
+PythOracleAdapter 集成了 Pyth Network 的价格源：
 
 **BTC Feed ID**: `0x7404e3d104ea7841c3d9e6fd20adfe99b4ad586bc08d8f3bd3afef894cf184de`
-**Pyth Contract**: `0x132923f95FD7E8a6FD8aC302D8fd92317F23aFfd` (Socrates Testnet)
+**Pyth 合约**: `0x132923f95FD7E8a6FD8aC302D8fd92317F23aFfd`（Socrates 测试网）
 
-**Price Format**:
-- Exponent: -8 (8 decimal places)
-- Example: `6500000000000` represents $65,000.00
+**价格格式**:
+- 指数：-8（8 位小数）
+- 示例：`6500000000000` 代表 $65,000.00
 
 ---
 
-## Complete Trade Lifecycle
+## 完整交易生命周期
 
-### 1. Market Creation
+### 1. 市场创建
 
 ```solidity
-// Owner creates market
+// 所有者创建市场
 registry.createMarket(
     usdcAddress,
     oracleAdapter,
     startTime,
     MarketKind.BTC_UPDOWN,
-    5  // 5 minutes
+    5  // 5 分钟
 );
-// → Emits MarketCreated(marketId, conditionId)
-// → CTF.prepareCondition() called
+// → 发出 MarketCreated(marketId, conditionId)
+// → 调用 CTF.prepareCondition()
 ```
 
-### 2. User Deposits Collateral
+### 2. 用户存入抵押品
 
 ```solidity
-// User approves and deposits USDC
+// 用户授权并存入 USDC
 usdc.approve(settlementAddress, 1000e6);
 settlement.depositCollateral(usdcAddress, 1000e6);
 ```
 
-### 3. Order Creation and Signing
+### 3. 订单创建和签名
 
 ```typescript
-// Frontend: User creates and signs order
+// 前端：用户创建并签名订单
 const order = {
     maker: userAddress,
     marketId: "1",
@@ -624,17 +624,17 @@ const order = {
 
 const signature = await signer.signTypedData(domain, types, order);
 
-// Submit to API
+// 提交到 API
 await fetch('/api/v1/orders', {
     method: 'POST',
     body: JSON.stringify({ order, signature, side: 'buy' })
 });
 ```
 
-### 4. Off-chain Matching
+### 4. 链下撮合
 
 ```typescript
-// Matcher finds crossing orders and generates fills
+// 撮合器找到交叉订单并生成填充
 const fills = [{
     order: sellOrder,
     signature: sellSignature,
@@ -643,73 +643,73 @@ const fills = [{
 }];
 ```
 
-### 5. On-chain Settlement
+### 5. 链上结算
 
 ```solidity
-// Relayer submits batch
+// 中继器提交批次
 settlement.batchFill(fills);
 
-// For each fill with mintOnFill=true:
-// 1. Verify signature
-// 2. Check balances
-// 3. CTF.splitPosition() - mints outcome tokens
-// 4. Transfer outcome tokens to taker
-// 5. Transfer opposite outcome to maker
-// 6. Deduct fees
+// 对于每个 mintOnFill=true 的填充：
+// 1. 验证签名
+// 2. 检查余额
+// 3. CTF.splitPosition() - 铸造结果代币
+// 4. 将结果代币转移给接受者
+// 5. 将相反结果转移给创建者
+// 6. 扣除手续费
 ```
 
-### 6. Market Resolution
+### 6. 市场解析
 
 ```solidity
-// After market expires (endTime + 60s buffer)
+// 市场到期后（endTime + 60秒缓冲期）
 registry.resolveMarket(marketId);
 
-// → Fetches start and end prices from oracle
-// → Determines winning outcome
-// → CTF.reportPayouts([0, 1]) if UP wins
-// → Emits MarketResolved event
+// → 从预言机获取开始和结束价格
+// → 确定获胜结果
+// → 如果 UP 获胜，调用 CTF.reportPayouts([0, 1])
+// → 发出 MarketResolved 事件
 ```
 
-### 7. User Redemption
+### 7. 用户赎回
 
 ```solidity
-// User redeems winning positions
-uint256[] indexSets = [2];  // Index 2 = UP outcome
+// 用户赎回获胜仓位
+uint256[] indexSets = [2];  // 索引 2 = UP 结果
 ctf.redeemPositions(usdcAddress, conditionId, indexSets);
 
-// → Burns outcome tokens
-// → Transfers proportional collateral to user
+// → 销毁结果代币
+// → 转移按比例的抵押品给用户
 ```
 
-### 8. Withdraw Collateral
+### 8. 提取抵押品
 
 ```solidity
-// User withdraws collateral back to wallet
+// 用户将抵押品提取回钱包
 settlement.withdrawCollateral(usdcAddress, amount);
 ```
 
 ---
 
-## Position ID Calculation
+## 仓位 ID 计算
 
-Position IDs are ERC1155 token IDs used to identify specific outcome tokens:
+仓位 ID 是用于标识特定结果代币的 ERC1155 代币 ID：
 
 ```solidity
-// Step 1: Get condition ID
+// 步骤 1：获取条件 ID
 bytes32 conditionId = ctf.getConditionId(oracle, questionId, 2);
 
-// Step 2: Get collection ID for outcome
-// indexSet: 1 for outcome 0 (DOWN), 2 for outcome 1 (UP)
+// 步骤 2：获取结果的集合 ID
+// indexSet: 1 表示结果 0 (DOWN)，2 表示结果 1 (UP)
 bytes32 collectionId = ctf.getCollectionId(conditionId, indexSet);
 
-// Step 3: Get position ID
+// 步骤 3：获取仓位 ID
 uint256 positionId = ctf.getPositionId(collateralToken, collectionId);
 
-// Check balance
+// 检查余额
 uint256 balance = ctf.balanceOf(userAddress, positionId);
 ```
 
-**Alternate Calculation (using solidityPackedKeccak256)**:
+**替代计算方法（使用 solidityPackedKeccak256）**:
 ```typescript
 import { solidityPackedKeccak256 } from 'ethers';
 
@@ -731,170 +731,170 @@ const positionId = solidityPackedKeccak256(
 
 ---
 
-## Gas Optimization
+## Gas 优化
 
-### Batch Processing
+### 批处理
 
-SettlementV2 supports batch filling to reduce gas costs:
+SettlementV2 支持批量填充以降低 gas 成本：
 
 ```solidity
-// Instead of 10 separate fill() calls:
+// 替代 10 次单独的 fill() 调用：
 // Gas: ~150k * 10 = 1,500,000
 
-// Use batchFill():
-// Gas: ~850k for 10 fills
-// Savings: ~43%
+// 使用 batchFill()：
+// Gas: ~850k（10 次填充）
+// 节省：~43%
 ```
 
-### CTF Benefits
+### CTF 优势
 
-ConditionalTokensV2 enables efficient market resolution:
+ConditionalTokensV2 实现高效的市场解析：
 
-**Without CTF** (iterate all users):
+**没有 CTF**（迭代所有用户）:
 ```
-Gas: ~50k per user
-1000 users = 50M gas (would fail)
+Gas: 每个用户约 50k
+1000 个用户 = 50M gas（会失败）
 ```
 
-**With CTF** (single reportPayouts):
+**有 CTF**（单次 reportPayouts）:
 ```
-Gas: ~50k total
-Users redeem independently
-Scales to millions of users
+Gas: 总共约 50k
+用户独立赎回
+可扩展到数百万用户
 ```
 
 ---
 
-## Security Features
+## 安全特性
 
-### 1. Signature Verification
+### 1. 签名验证
 
-- EIP-712 typed data signing prevents replay attacks
-- Signature includes chainId and verifyingContract
-- Nonce bitmap prevents double-spending
+- EIP-712 类型化数据签名防止重放攻击
+- 签名包含 chainId 和 verifyingContract
+- Nonce bitmap 防止双花
 
-### 2. Collateral Safety
+### 2. 抵押品安全
 
-- Whitelisted collateral tokens only
-- Settlement contract holds custody
-- Balance checks before execution
-- ReentrancyGuard protection
+- 仅白名单抵押代币
+- Settlement 合约持有托管
+- 执行前余额检查
+- ReentrancyGuard 保护
 
-### 3. Market Safety
+### 3. 市场安全
 
-- Owner-only market creation
-- Oracle verification with cooldown period
-- Immutable market parameters after creation
-- CTF ensures correct payouts
+- 仅所有者可创建市场
+- 带冷却期的预言机验证
+- 创建后市场参数不可变
+- CTF 确保正确支付
 
-### 4. Access Control
+### 4. 访问控制
 
-- Ownable pattern for administrative functions
-- Only oracle can reportPayouts
-- Only Relayer submits fills (in production setup)
+- 管理功能的 Ownable 模式
+- 仅预言机可 reportPayouts
+- 仅中继器提交填充（在生产设置中）
 
 ---
 
-## Error Handling
+## 错误处理
 
-### Common Errors
+### 常见错误
 
 **InsufficientBalance()**
-- User doesn't have enough collateral deposited
-- Solution: Deposit more collateral
+- 用户没有足够的已存入抵押品
+- 解决方案：存入更多抵押品
 
 **InvalidSignature()**
-- Order signature verification failed
-- Solution: Re-sign order with correct parameters
+- 订单签名验证失败
+- 解决方案：使用正确参数重新签名订单
 
 **OrderExpired()**
-- Order expiry timestamp passed
-- Solution: Create new order with future expiry
+- 订单过期时间戳已过
+- 解决方案：创建带未来过期时间的新订单
 
 **Overfill()**
-- Trying to fill more than order amount
-- Solution: Reduce fill amount
+- 尝试填充超过订单数量
+- 解决方案：减少填充数量
 
 **UnsupportedCollateral()**
-- Collateral token not whitelisted
-- Solution: Use USDC
+- 抵押代币未列入白名单
+- 解决方案：使用 USDC
 
 **InvalidOutcome()**
-- Outcome must be 0 or 1
-- Solution: Use valid outcome value
+- 结果必须是 0 或 1
+- 解决方案：使用有效的结果值
 
 ---
 
-## Testing
+## 测试
 
-### Contract Tests
+### 合约测试
 
-Run full test suite:
+运行完整测试套件：
 ```bash
 cd chain
 pnpm hardhat test
 ```
 
-### Manual Testing Scripts
+### 手动测试脚本
 
-**Mint USDC**:
+**铸造 USDC**:
 ```bash
 npx hardhat run scripts/mintUSDC.ts --network soc_test
 ```
 
-**Create Markets**:
+**创建市场**:
 ```bash
 npx hardhat run scripts/createMarkets.ts --network soc_test
 ```
 
-**Resolve Market**:
+**解析市场**:
 ```bash
 npx hardhat run scripts/resolveMarket.ts --network soc_test
 ```
 
-**Check Balances**:
+**检查余额**:
 ```bash
 npx hardhat run scripts/checkBalance.ts --network soc_test
 ```
 
 ---
 
-## Deployment
+## 部署
 
-### Full Deployment
+### 完整部署
 
 ```bash
 cd chain
 pnpm hardhat deploy --network soc_test
 ```
 
-Deploys in order:
+按顺序部署：
 1. MockUSDC
 2. ConditionalTokensV2
 3. SettlementV2
 4. PythOracleAdapter
 5. MarketRegistryV2
 
-Generates `chain/addresses.json` with deployed addresses.
+生成带已部署地址的 `chain/addresses.json`。
 
-### Verification
+### 验证
 
-Verify contracts on block explorer:
+在区块浏览器上验证合约：
 ```bash
 npx hardhat verify --network soc_test <CONTRACT_ADDRESS> <CONSTRUCTOR_ARGS>
 ```
 
 ---
 
-## References
+## 参考资料
 
-- [CTF Specification](https://docs.gnosis.io/conditionaltokens/)
-- [EIP-712: Typed Data Signing](https://eips.ethereum.org/EIPS/eip-712)
-- [EIP-1155: Multi Token Standard](https://eips.ethereum.org/EIPS/eip-1155)
-- [Pyth Network Documentation](https://docs.pyth.network/)
-- [Socrates Testnet Explorer](https://explorer-testnet.socrateschain.org/)
+- [CTF 规范](https://docs.gnosis.io/conditionaltokens/)
+- [EIP-712: 类型化数据签名](https://eips.ethereum.org/EIPS/eip-712)
+- [EIP-1155: 多代币标准](https://eips.ethereum.org/EIPS/eip-1155)
+- [Pyth Network 文档](https://docs.pyth.network/)
+- [Socrates 测试网浏览器](https://explorer-testnet.socrateschain.org/)
 
 ---
 
-For backend integration and API usage, see **BACKEND.md**.
-For frontend development, see **FRONTEND.md**.
+后端集成和 API 使用详见 **BACKEND.md**。
+前端开发详见 **FRONTEND.md**。
